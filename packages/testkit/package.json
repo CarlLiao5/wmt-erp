@@ -1,0 +1,1 @@
+{"name":"@walmart-erp/testkit","version":"0.1.0","private":true,"type":"module","scripts":{"test:readonly-contract":"node -e \"console.log('readonly contract placeholder')\"","build":"tsc --noEmit","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"}}

@@ -1,0 +1,1 @@
+{"name":"@walmart-erp/db","version":"0.1.0","private":true,"type":"module","scripts":{"migrate":"node -e \"console.log('database migrations placeholder')\"","build":"tsc --noEmit","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"}}

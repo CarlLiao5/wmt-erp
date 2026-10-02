@@ -1,0 +1,1 @@
+{"name":"@walmart-erp/api","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"node -e \"console.log('api dev server placeholder')\"","build":"tsc --noEmit","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"}}

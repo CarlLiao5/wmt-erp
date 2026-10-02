@@ -1,0 +1,18 @@
+{
+  "name": "walmart-erp",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:api": "pnpm --filter @walmart-erp/api dev",
+    "dev:worker": "pnpm --filter @walmart-erp/worker dev",
+    "dev:web": "pnpm --filter @walmart-erp/web dev",
+    "db:migrate": "pnpm --filter @walmart-erp/db migrate",
+    "test": "node --test scripts/smoke-workspace.mjs",
+    "test:readonly-contract": "pnpm --filter @walmart-erp/testkit test:readonly-contract",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": { "typescript": "5.7.3" }
+}
