@@ -17,6 +17,6 @@ export const sessions = mysqlTable('sessions', {
 }, (table) => [index('sessions_expiry_idx').on(table.expiresAt)]);
 
 export const credentials = mysqlTable('store_credentials', {
-  storeId: varchar('store_id', { length: 36 }).primaryKey(), tenantId: varchar('tenant_id', { length: 36 }).notNull(), encryptedSecret: varchar('encrypted_secret', { length: 1024 }).notNull(),
+  storeId: varchar('store_id', { length: 36 }).primaryKey(), tenantId: varchar('tenant_id', { length: 36 }).notNull(), encryptedClientId: varchar('encrypted_client_id', { length: 1024 }).notNull(), encryptedSecret: varchar('encrypted_secret', { length: 1024 }).notNull(),
   updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
 });

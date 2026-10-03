@@ -1,1 +1,2 @@
-export { stores, credentials } from './iam';
+export { stores } from './common.js';
+export { credentials } from './iam.js';
