@@ -1,0 +1,2 @@
+import { describe, expect, it } from 'vitest'; import { scheduleRetry } from './retry.js';
+describe('worker retries',()=>{ it('backs off 429 and honors a retry-after delay',()=>expect(scheduleRetry({status:429,retryAfterMs:5000},1)).toEqual({action:'retry',delayMs:5000,reason:'retryable status 429'})); it('dead-letters non-retryable and exhausted failures',()=>{ expect(scheduleRetry({status:400},1).action).toBe('dead-letter'); expect(scheduleRetry({status:500},5).action).toBe('dead-letter'); }); });
