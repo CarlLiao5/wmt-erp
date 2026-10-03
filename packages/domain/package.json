@@ -1,1 +1,1 @@
-{"name":"@walmart-erp/domain","version":"0.1.0","private":true,"type":"module","scripts":{"build":"tsc --noEmit","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"}}
+{"name":"@walmart-erp/domain","version":"0.1.0","private":true,"type":"module","scripts":{"build":"tsc --noEmit","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit","test":"vitest run"}}

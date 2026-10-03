@@ -1,0 +1,4 @@
+import { describe, expect, it } from 'vitest';
+import { hashPassword, verifyPassword } from './passwords.js';
+import { createSession, parseSessionId, sessionCookie } from './sessions.js';
+describe('auth primitives', () => { it('hashes with Argon2id and verifies only the original password', async () => { const hash = await hashPassword('correct horse battery staple'); expect(hash).toContain('$argon2id$'); await expect(verifyPassword(hash,'correct horse battery staple')).resolves.toBe(true); await expect(verifyPassword(hash,'wrong')).resolves.toBe(false); }); it('creates an opaque HTTP-only session cookie', () => { const session = createSession('tenant','user'); const cookie = sessionCookie(session); expect(cookie).toContain('HttpOnly'); expect(cookie).toContain('SameSite=Lax'); expect(parseSessionId(cookie)).toBe(session.id); }); });
