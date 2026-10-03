@@ -12,6 +12,7 @@ import { wfsRouter } from './routes/wfs.js';
 import { overviewRouter } from './routes/overview.js';
 import { performanceRouter } from './routes/performance.js';
 import { pricingRouter } from './routes/pricing.js';
+import { opsRouter } from './routes/ops.js';
 export function createApp(): Express {
   const app = express();
   app.use(express.json());
@@ -28,6 +29,7 @@ export function createApp(): Express {
   app.use('/api', overviewRouter());
   app.use('/api', performanceRouter());
   app.use('/api', pricingRouter());
+  app.use('/api', opsRouter());
   const errors: ErrorRequestHandler = (error, _req, res, _next) => res.status(500).json({ requestId: res.locals.requestId, data: null, error: { message: error instanceof Error ? error.message : 'Internal Server Error' } });
   app.use(errors);
   return app;
