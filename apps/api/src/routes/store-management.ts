@@ -1,0 +1,4 @@
+import { Router } from 'express';
+export interface Store { id: string; name: string; environment: 'sandbox' | 'production'; status: 'active' | 'disabled'; }
+const stores: Store[] = [];
+export function storeManagementRouter(): Router { const r = Router(); r.get('/stores', (_req, res) => res.json({ requestId: res.locals.requestId, data: stores, error: null })); r.post('/stores', (req, res) => { const body = req.body as Partial<Store>; if (!body.id || !body.name || !body.environment) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: '店铺信息不完整' } }); const store: Store = { id: body.id, name: body.name, environment: body.environment, status: 'active' }; stores.push(store); return res.status(201).json({ requestId: res.locals.requestId, data: store, error: null }); }); return r; }
