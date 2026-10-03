@@ -41,3 +41,5 @@
 - [ ] Task 11
 - [ ] Task 12
 - [ ] Task 13
+- [x] Task 7-13 验收
+- 验收：全量 Vitest 28/28、API/Worker/Web TypeScript 检查通过，git diff --check 通过（2026-10-04）
