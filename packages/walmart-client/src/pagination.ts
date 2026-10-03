@@ -1,0 +1,3 @@
+import type { WalmartConnection } from './types.js';
+import { walmartGet } from './transport.js';
+export async function* paginate<T>(connection: WalmartConnection, path: string, query: Record<string,string> = {}) { let next: string | undefined = query.nextCursor; do { const response: Awaited<ReturnType<typeof walmartGet<{ data?: T[]; items?: T[]; nextCursor?: string }>>> = await walmartGet<{ data?: T[]; items?: T[]; nextCursor?: string }>(connection,path,{query:{...query,...(next ? {nextCursor:next}:{})}}); const items = response.data.data ?? response.data.items ?? []; for (const item of items) yield item; next = response.data.nextCursor; } while(next); }

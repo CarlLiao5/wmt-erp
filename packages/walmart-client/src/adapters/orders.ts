@@ -1,0 +1,1 @@
+import { paginate } from '../pagination.js'; import type { WalmartConnection } from '../types.js'; export const listOrders = (c: WalmartConnection, q: Record<string,string>={}) => paginate<unknown>(c,'/v3/orders',q); export const getOrder = (c: WalmartConnection,id:string) => paginate<unknown>(c,`/v3/orders/${encodeURIComponent(id)}`);

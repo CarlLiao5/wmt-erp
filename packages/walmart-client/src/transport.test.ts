@@ -1,0 +1,6 @@
+import { describe, expect, it, vi } from 'vitest';
+import { assertReadOnly } from './readonly.js';
+import { walmartGet } from './transport.js';
+import { getAccessToken } from './auth/token.js';
+const connection = { clientId:'id', clientSecret:'secret', environment:'sandbox' as const, baseUrl:'https://example.test' };
+describe('read-only Walmart connector',()=>{ it.each(['POST','PUT','PATCH','DELETE'])('rejects %s business method', method=>expect(()=>assertReadOnly(method,'/v3/items')).toThrow('read-only')); it('gets a token only through the auth endpoint and sends unique correlation headers',async()=>{ const calls: RequestInit[]=[]; const fetcher=vi.fn(async (_url:string, init?:RequestInit)=>{calls.push(init??{}); return new Response(JSON.stringify({access_token:'a',expires_in:900}),{status:200,headers:{'content-type':'application/json'}}); }) as unknown as typeof fetch; await getAccessToken(connection,fetcher); await walmartGet({...connection,accessToken:'a',accessTokenExpiresAt:Date.now()+300_000},'/v3/items',{fetcher}); expect(calls[0].method).toBe('POST'); expect(calls[1].method).toBe('GET'); expect((calls[1].headers as Record<string,string>)['WM_QOS.CORRELATION_ID']).toBeTruthy(); }); });
