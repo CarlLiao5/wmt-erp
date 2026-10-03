@@ -1,0 +1,3 @@
+import { Router } from 'express';
+export interface Goal { id: string; name: string; target: number; period: string; }
+export function goalsRouter(save: (goal: Goal) => Promise<Goal>, list: () => Promise<Goal[]> = async () => []): Router { const r = Router(); r.get('/goals', async (_req, res, next) => { try { return res.json({ requestId: res.locals.requestId, data: await list(), error: null }); } catch (e) { return next(e); } }); r.post('/goals', async (req, res, next) => { try { return res.status(201).json({ requestId: res.locals.requestId, data: await save(req.body as Goal), error: null }); } catch (e) { return next(e); } }); return r; }
