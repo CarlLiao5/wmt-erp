@@ -1,0 +1,2 @@
+import { datetime, index, json, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
+export const auditEvents = mysqlTable('audit_events', { id: varchar('id',{length:36}).primaryKey(), tenantId: varchar('tenant_id',{length:36}).notNull(), userId: varchar('user_id',{length:36}), action: varchar('action',{length:100}).notNull(), payload: json('payload'), createdAt: datetime('created_at',{mode:'date',fsp:3}).notNull() }, (t)=>[index('audit_scope_time_idx').on(t.tenantId,t.createdAt)]);
