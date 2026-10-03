@@ -5,6 +5,8 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { syncStatusRouter } from './routes/sync-status.js';
 import { itemsRouter } from './routes/items.js';
 import { membersRouter } from './routes/members.js';
+import { ordersRouter } from './routes/orders.js';
+import { returnsRouter } from './routes/returns.js';
 export function createApp(): Express {
   const app = express();
   app.use(express.json());
@@ -14,6 +16,8 @@ export function createApp(): Express {
   app.use('/api', syncStatusRouter());
   app.use('/api', itemsRouter());
   app.use('/api', membersRouter());
+  app.use('/api', ordersRouter());
+  app.use('/api', returnsRouter());
   const errors: ErrorRequestHandler = (error, _req, res, _next) => res.status(500).json({ requestId: res.locals.requestId, data: null, error: { message: error instanceof Error ? error.message : 'Internal Server Error' } });
   app.use(errors);
   return app;
