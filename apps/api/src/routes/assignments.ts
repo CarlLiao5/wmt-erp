@@ -1,0 +1,3 @@
+import { Router } from 'express';
+export interface Assignment { memberId: string; storeId?: string; sku?: string; }
+export function assignmentsRouter(save: (a: Assignment) => Promise<Assignment>): Router { const r = Router(); r.post('/assignments', async (req, res, next) => { try { const body = req.body as Partial<Assignment>; if (!body.memberId || (!body.storeId && !body.sku)) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: 'memberId and storeId or sku are required' } }); return res.status(201).json({ requestId: res.locals.requestId, data: await save(body as Assignment), error: null }); } catch (e) { return next(e); } }); return r; }
