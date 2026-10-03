@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { healthRouter } from './routes/health.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { syncStatusRouter } from './routes/sync-status.js';
+import { itemsRouter } from './routes/items.js';
 export function createApp(): Express {
   const app = express();
   app.use(express.json());
@@ -10,6 +11,7 @@ export function createApp(): Express {
   app.use('/api', healthRouter());
   app.use('/api', dashboardRouter());
   app.use('/api', syncStatusRouter());
+  app.use('/api', itemsRouter());
   const errors: ErrorRequestHandler = (error, _req, res, _next) => res.status(500).json({ requestId: res.locals.requestId, data: null, error: { message: error instanceof Error ? error.message : 'Internal Server Error' } });
   app.use(errors);
   return app;
