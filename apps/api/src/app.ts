@@ -16,6 +16,7 @@ import { opsRouter } from './routes/ops.js';
 import { authRouter } from './routes/auth.js';
 export function createApp(): Express {
   const app = express();
+  app.use((req, res, next) => { res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); res.setHeader('Access-Control-Allow-Credentials', 'true'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); if (req.method === 'OPTIONS') return res.sendStatus(204); next(); });
   app.use(express.json());
   app.use((_req, res, next) => { res.locals.requestId = randomUUID(); next(); });
   app.use('/api', healthRouter());
