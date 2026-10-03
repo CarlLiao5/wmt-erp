@@ -2,10 +2,10 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: walmart_erp
-      MYSQL_USER: walmart
-      MYSQL_PASSWORD: walmart_dev
-      MYSQL_ROOT_PASSWORD: root_dev
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-walmart_erp}
+      MYSQL_USER: ${MYSQL_USER:-walmart}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-walmart_dev}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_dev}
     ports:
       - "3306:3306"
     volumes:
