@@ -1,5 +1,5 @@
 import { boolean, datetime, index, mysqlTable, primaryKey, varchar } from 'drizzle-orm/mysql-core';
-import { stores, tenants, users } from './common';
+import { stores, tenants, users } from './common.js';
 
 export const storeAssignments = mysqlTable('store_assignments', {
   tenantId: varchar('tenant_id', { length: 36 }).notNull(), userId: varchar('user_id', { length: 36 }).notNull(), storeId: varchar('store_id', { length: 36 }).notNull(),
@@ -20,5 +20,3 @@ export const credentials = mysqlTable('store_credentials', {
   storeId: varchar('store_id', { length: 36 }).primaryKey(), tenantId: varchar('tenant_id', { length: 36 }).notNull(), encryptedSecret: varchar('encrypted_secret', { length: 1024 }).notNull(),
   updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
 });
-
-export { stores, tenants, users };
