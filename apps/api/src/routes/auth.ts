@@ -1,0 +1,3 @@
+import { Router } from 'express';
+import { createSession, sessionCookie } from '../auth/sessions.js';
+export function authRouter(): Router { const r = Router(); r.post('/auth/login', (req, res) => { const { email, password } = req.body as { email?: string; password?: string }; if (email !== (process.env.ERP_ADMIN_EMAIL ?? 'admin@example.com') || password !== (process.env.ERP_ADMIN_PASSWORD ?? 'admin123')) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: '邮箱或密码错误' } }); const session = createSession('default', 'admin'); res.setHeader('Set-Cookie', sessionCookie(session)); return res.json({ requestId: res.locals.requestId, data: { userId: 'admin', role: 'admin' }, error: null }); }); return r; }
