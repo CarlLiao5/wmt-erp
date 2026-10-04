@@ -15,3 +15,8 @@ it('projects replayed raw pages into one current line and append-only status his
   expect(projection.snapshots.map((snapshot) => snapshot.status)).toEqual(['REQUESTED', 'REFUNDED']);
   expect(projection.snapshots.map((snapshot) => snapshot.rawResponseId)).toEqual(['3', '5']);
 });
+
+it('retains a later repeated status after an intervening transition', () => {
+  const rows = ['REQUESTED', 'REFUNDED', 'REQUESTED'].map((status, index) => ({ id: String(index + 1), tenantId: 't', storeId: 's', resource: 'returns', payload: { returns: [{ returnOrderId: 'r', purchaseOrderId: 'o', returnDate: '2026-01-03', returnOrderLines: [{ lineNumber: '1', item: { sku: 'A' }, status, refundAmount: { amount: 0 } }] }] } }));
+  expect(projectCommerceRows(rows).snapshots.map((snapshot) => snapshot.status)).toEqual(['REQUESTED', 'REFUNDED', 'REQUESTED']);
+});

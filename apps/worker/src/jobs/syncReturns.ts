@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { walmartGet, type WalmartConnection } from '@walmart-erp/walmart-client';
-export interface NormalizedReturn { id: string; tenantId: string; storeId: string; orderId: string; sku: string; amount: number; status: string; returnedAt: string; rawResponseId: string; }
+export interface NormalizedReturn { id: string; tenantId: string; storeId: string; orderId: string; orderNumber?: string; itemId?: string; sku: string; amount: number; status: string; returnedAt: string; rawResponseId: string; }
 export interface ReturnStatusSnapshot { id: string; returnId: string; status: string; refundAmount: number; returnedAt: string; rawResponseId: string; }
 type Row = Record<string, unknown>;
 const object = (value: unknown): Row => value && typeof value === 'object' ? value as Row : {};
@@ -15,7 +15,7 @@ export function normalizeReturnPayload(payload: unknown, context: { tenantId: st
       const sku = String(object(line.item).sku ?? line.sku ?? '');
       if (!returnId || !sku) return [];
       const orderNumber = String(row.purchaseOrderId ?? row.customerOrderId ?? '');
-      return [{ id: `${context.storeId}:${returnId}:${String(line.lineNumber ?? index + 1)}`, tenantId: context.tenantId, storeId: context.storeId, orderId: orderNumber ? `${context.storeId}:${orderNumber}` : '', sku, amount: Number(object(line.refundAmount).amount ?? line.refundAmount ?? 0) || 0, status: String(line.status ?? row.status ?? ''), returnedAt: String(row.returnDate ?? row.returnedAt ?? ''), rawResponseId: context.rawResponseId }];
+      return [{ id: `${context.storeId}:${returnId}:${String(line.lineNumber ?? index + 1)}`, tenantId: context.tenantId, storeId: context.storeId, orderId: orderNumber ? `${context.storeId}:${orderNumber}` : '', orderNumber, itemId: String(object(line.item).productId ?? line.itemId ?? '') || undefined, sku, amount: Number(object(line.refundAmount).amount ?? line.refundAmount ?? 0) || 0, status: String(line.status ?? row.status ?? ''), returnedAt: String(row.returnDate ?? row.returnedAt ?? ''), rawResponseId: context.rawResponseId }];
     });
   });
 }

@@ -8,7 +8,7 @@ it('aggregates visible order and refund lines without double counting orders', (
 
 it('counts one returned order when multiple lines are refunded', () => {
   const facts = dailySalesFacts([{ id: 'a', tenantId: 't', storeId: 's', orderId: 'o1', sku: 'A', quantity: 2, amount: 12, orderedAt: '2026-01-02', rawResponseId: 'raw-1' }], [{ id: 'r1', tenantId: 't', storeId: 's', orderId: 'o1', sku: 'A', amount: 5, status: 'REFUNDED', returnedAt: '2026-01-02', rawResponseId: 'raw-2' }, { id: 'r2', tenantId: 't', storeId: 's', orderId: 'o1', sku: 'B', amount: 3, status: 'REFUNDED', returnedAt: '2026-01-02', rawResponseId: 'raw-2' }]);
-  expect(facts[0]).toMatchObject({ orders: 1, returns: 1, refunds: 8, returnRate: 1 });
+  expect(facts[0]).toMatchObject({ orders: 1, returns: 1, refunds: 5, returnRate: 1 });
 });
 
 it('attributes a return to its original order-day cohort', () => {

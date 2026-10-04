@@ -4,6 +4,7 @@ import { ordersRouter } from './orders.js';
 import { returnsRouter } from './returns.js';
 import { createApp } from '../app.js';
 import { hashPassword } from '../auth/passwords.js';
+import { createSyncRouter } from './sync.js';
 
 const visibility = () => ({ tenantId: 't1', role: 'member' as const, storeIds: new Set<string>(), skus: new Set(['s1:A']), customerFields: new Set(['name']) });
 const lines = [
@@ -42,6 +43,25 @@ it('filters returns by the same line scope', async () => {
   expect((await request(app, '/returns')).data.rows.map((row: { id: string }) => row.id)).toEqual(['r1']);
   expect((await request(app, '/returns/r1/history')).data.map((row: { status: string }) => row.status)).toEqual(['REQUESTED']);
   expect((await request(app, '/returns/r2/history')).data).toBeNull();
+});
+
+it('names date basis and filters returns by order and item', async () => {
+  const app = express(); app.use(returnsRouter({ list: async () => [{ ...returns[0], orderNumber: '100', itemId: 'i1' }], visibility }));
+  const result = (await request(app, '/returns?orderNumber=100&itemId=i1&from=2026-01-03&to=2026-01-03')).data;
+  expect(result).toMatchObject({ dateBasis: 'returnedAt', total: 1 });
+  expect((await request(app, '/returns?orderNumber=other')).data.total).toBe(0);
+});
+
+it('derives queued sync tenant from authenticated scope and checks store access', async () => {
+  const queued: unknown[] = [];
+  const app = express(); app.use(express.json()); app.use(createSyncRouter(async (request) => { queued.push(request); return { id: 'j', jobId: 'j' }; }, visibility));
+  const server = await new Promise<import('node:http').Server>((resolve) => { const value = app.listen(0, () => resolve(value)); });
+  try {
+    const address = server.address(); if (!address || typeof address === 'string') throw new Error('address');
+    const response = await fetch(`http://127.0.0.1:${address.port}/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenantId: 'other', storeId: 's1', resource: 'orders', window: { from: '2026-01-01', to: '2026-01-02' } }) });
+    expect(response.status).toBe(403);
+    expect(queued).toEqual([]);
+  } finally { await new Promise<void>((resolve) => server.close(() => resolve())); }
 });
 
 it('uses filtered order-line cohort for refunds and return rate', async () => {

@@ -17,8 +17,10 @@ import { authRouter, authenticatedSession, mysqlUserFinder, type UserFinder } fr
 import { storeManagementRouter } from './routes/store-management.js';
 import { mysqlStoresRouter } from './routes/mysql-stores.js';
 import { mysqlCommerceSource, unavailableCommerceSource, CommerceUnavailableError, type CommerceSource } from './routes/commerce-source.js';
-import { mysqlAssignmentLoader, resolveCommerceVisibility, type AssignmentLoader } from './routes/commerce-visibility.js';
-export interface AppOptions { commerce?: CommerceSource; findUser?: UserFinder; assignments?: AssignmentLoader; }
+import { mysqlAssignmentLoader, mysqlCustomerGrantLoader, resolveCommerceVisibility, type AssignmentLoader, type CustomerGrantLoader } from './routes/commerce-visibility.js';
+import { createSyncRouter } from './routes/sync.js';
+import { createSyncQueue, enqueueSync } from '../../worker/src/queue.js';
+export interface AppOptions { commerce?: CommerceSource; findUser?: UserFinder; assignments?: AssignmentLoader; customerGrants?: CustomerGrantLoader; }
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
   app.use((req, res, next) => { res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); res.setHeader('Access-Control-Allow-Credentials', 'true'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); if (req.method === 'OPTIONS') return res.sendStatus(204); next(); });
@@ -30,7 +32,10 @@ export function createApp(options: AppOptions = {}): Express {
   app.use('/api', itemsRouter());
   app.use('/api', membersRouter());
   const assignments = options.assignments ?? (process.env.MYSQL_URL ? mysqlAssignmentLoader() : async () => []);
-  const visibility = async (req: express.Request) => { const session = authenticatedSession(req.headers.cookie); return session ? resolveCommerceVisibility(session, assignments) : undefined; };
+  const customerGrants = options.customerGrants ?? (process.env.MYSQL_URL ? mysqlCustomerGrantLoader() : async () => []);
+  const visibility = async (req: express.Request) => { const session = authenticatedSession(req.headers.cookie); return session ? resolveCommerceVisibility(session, assignments, new Date(), customerGrants) : undefined; };
+  let syncQueue: ReturnType<typeof createSyncQueue> | undefined;
+  app.use('/api', createSyncRouter(async (request) => { syncQueue ??= createSyncQueue(); return enqueueSync(request, syncQueue.queue); }, visibility));
   const commerce = options.commerce ?? (process.env.MYSQL_URL ? mysqlCommerceSource() : unavailableCommerceSource());
   app.use('/api', ordersRouter({ list: commerce.listOrders, returns: commerce.listReturns, visibility }));
   app.use('/api', returnsRouter({ list: commerce.listReturns, history: commerce.listReturnSnapshots, visibility }));

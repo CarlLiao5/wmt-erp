@@ -11,20 +11,27 @@ export interface CommerceSource { listOrders(tenantId: string): Promise<OrderLin
 export function projectCommerceRows(rows: RawCommerceRow[]) {
   const orders = new Map<string, ReturnType<typeof normalizeOrderPayload>[number]>();
   const returns = new Map<string, ReturnType<typeof normalizeReturnPayload>[number]>();
-  const snapshots = new Map<string, ReturnSnapshot>();
+  const snapshots: ReturnSnapshot[] = [];
+  const latestSnapshot = new Map<string, string>();
+  const seenRaw = new Set<string>();
   for (const row of rows) {
     const context = { tenantId: row.tenantId, storeId: row.storeId, rawResponseId: row.externalId ?? String(row.id) };
     if (row.resource === 'orders') {
       for (const line of normalizeOrderPayload(row.payload, context)) orders.set(line.id, line);
     } else if (row.resource === 'returns') {
+      if (seenRaw.has(`${row.tenantId}:${row.storeId}:${context.rawResponseId}`)) continue;
+      seenRaw.add(`${row.tenantId}:${row.storeId}:${context.rawResponseId}`);
       for (const line of normalizeReturnPayload(row.payload, context)) {
         returns.set(line.id, line);
-        const id = `${line.id}:${line.status}:${line.amount}:${line.returnedAt}`;
-        if (!snapshots.has(id)) snapshots.set(id, { id, returnId: line.id, status: line.status, refundAmount: line.amount, returnedAt: line.returnedAt, rawResponseId: line.rawResponseId });
+        const state = `${line.status}:${line.amount}:${line.returnedAt}`;
+        if (latestSnapshot.get(line.id) !== state) {
+          snapshots.push({ id: `${line.id}:${context.rawResponseId}`, returnId: line.id, status: line.status, refundAmount: line.amount, returnedAt: line.returnedAt, rawResponseId: line.rawResponseId });
+          latestSnapshot.set(line.id, state);
+        }
       }
     }
   }
-  return { orders: [...orders.values()], returns: [...returns.values()], snapshots: [...snapshots.values()] };
+  return { orders: [...orders.values()], returns: [...returns.values()], snapshots };
 }
 
 export function mysqlCommerceSource(): CommerceSource {

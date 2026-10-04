@@ -11,6 +11,10 @@ export const skuAssignments = mysqlTable('sku_assignments', {
   validFrom: datetime('valid_from', { mode: 'date', fsp: 3 }).notNull(), validUntil: datetime('valid_until', { mode: 'date', fsp: 3 }),
 }, (table) => [primaryKey({ columns: [table.tenantId, table.userId, table.skuId] })]);
 
+export const customerFieldGrants = mysqlTable('customer_field_grants', {
+  tenantId: varchar('tenant_id', { length: 36 }).notNull(), userId: varchar('user_id', { length: 36 }).notNull(), field: varchar('field', { length: 32 }).notNull(),
+}, (table) => [primaryKey({ columns: [table.tenantId, table.userId, table.field] })]);
+
 export const sessions = mysqlTable('sessions', {
   id: varchar('id', { length: 64 }).primaryKey(), tenantId: varchar('tenant_id', { length: 36 }).notNull(), userId: varchar('user_id', { length: 36 }).notNull(),
   expiresAt: datetime('expires_at', { mode: 'date', fsp: 3 }).notNull(), createdAt: datetime('created_at', { mode: 'date', fsp: 3 }).notNull(),
