@@ -3,7 +3,7 @@ import { normalizeReturnPayload, replayReturnPages } from './syncReturns.js';
 
 it('normalizes refund and status snapshots with raw response IDs', () => {
   const rows = normalizeReturnPayload({ returns: [{ returnOrderId: 'r1', customerOrderId: 'o1', returnDate: '2026-01-04T00:00:00Z', returnOrderLines: [{ lineNumber: '1', item: { sku: 'A' }, status: 'REFUNDED', refundAmount: { amount: 5 } }] }] }, { tenantId: 't', storeId: 's', rawResponseId: 'raw-return' });
-  expect(rows).toMatchObject([{ id: 's:r1:1', orderId: 'o1', sku: 'A', status: 'REFUNDED', amount: 5, rawResponseId: 'raw-return' }]);
+  expect(rows).toMatchObject([{ id: 's:r1:1', orderId: 's:o1', sku: 'A', status: 'REFUNDED', amount: 5, rawResponseId: 'raw-return' }]);
 });
 
 it('replays all return pages within an overlapping modified window', async () => {

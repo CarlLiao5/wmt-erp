@@ -14,7 +14,8 @@ export function normalizeReturnPayload(payload: unknown, context: { tenantId: st
       const line = object(lineValue);
       const sku = String(object(line.item).sku ?? line.sku ?? '');
       if (!returnId || !sku) return [];
-      return [{ id: `${context.storeId}:${returnId}:${String(line.lineNumber ?? index + 1)}`, tenantId: context.tenantId, storeId: context.storeId, orderId: String(row.customerOrderId ?? row.purchaseOrderId ?? ''), sku, amount: Number(object(line.refundAmount).amount ?? line.refundAmount ?? 0) || 0, status: String(line.status ?? row.status ?? ''), returnedAt: String(row.returnDate ?? row.returnedAt ?? ''), rawResponseId: context.rawResponseId }];
+      const orderNumber = String(row.purchaseOrderId ?? row.customerOrderId ?? '');
+      return [{ id: `${context.storeId}:${returnId}:${String(line.lineNumber ?? index + 1)}`, tenantId: context.tenantId, storeId: context.storeId, orderId: orderNumber ? `${context.storeId}:${orderNumber}` : '', sku, amount: Number(object(line.refundAmount).amount ?? line.refundAmount ?? 0) || 0, status: String(line.status ?? row.status ?? ''), returnedAt: String(row.returnDate ?? row.returnedAt ?? ''), rawResponseId: context.rawResponseId }];
     });
   });
 }

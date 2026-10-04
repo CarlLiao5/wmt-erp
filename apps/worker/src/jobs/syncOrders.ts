@@ -22,10 +22,10 @@ export function normalizeOrderPayload(payload: unknown, context: OrderContext): 
       const sku = text(object(line.item).sku ?? line.sku).trim();
       if (!sku) return [];
       const lineNumber = text(line.lineNumber ?? index + 1);
-      const charge = array(object(line.charges).charge).map(object).find((entry) => entry.chargeType === 'PRODUCT');
+      const charges = array(object(line.charges).charge).map(object).filter((entry) => entry.chargeType === 'PRODUCT');
       const customer = Object.fromEntries(Object.entries(object(order.customer)).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
       const status = object(array(object(line.orderLineStatuses).orderLineStatus)[0]).status;
-      return [{ id: `${context.storeId}:${orderNumber}:${lineNumber}`, tenantId: context.tenantId, storeId: context.storeId, orderId: `${context.storeId}:${orderNumber}`, orderNumber, sku, itemId: text(object(line.item).productId) || undefined, quantity: amount(line.orderLineQuantity), amount: amount(charge?.chargeAmount ?? line.amount), orderedAt: text(order.orderDate ?? order.orderedAt), status: text(status ?? line.status ?? order.status), rawResponseId: context.rawResponseId, ...(Object.keys(customer).length ? { customer } : {}) }];
+      return [{ id: `${context.storeId}:${orderNumber}:${lineNumber}`, tenantId: context.tenantId, storeId: context.storeId, orderId: `${context.storeId}:${orderNumber}`, orderNumber, sku, itemId: text(object(line.item).productId) || undefined, quantity: amount(line.orderLineQuantity), amount: charges.length ? charges.reduce((total, charge) => total + amount(charge.chargeAmount), 0) : amount(line.amount), orderedAt: text(order.orderDate ?? order.orderedAt), status: text(status ?? line.status ?? order.status), rawResponseId: context.rawResponseId, ...(Object.keys(customer).length ? { customer } : {}) }];
     });
   });
 }

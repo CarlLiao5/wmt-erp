@@ -13,10 +13,13 @@ import { overviewRouter } from './routes/overview.js';
 import { performanceRouter } from './routes/performance.js';
 import { pricingRouter } from './routes/pricing.js';
 import { opsRouter } from './routes/ops.js';
-import { authRouter, authenticatedSession } from './routes/auth.js';
+import { authRouter, authenticatedSession, mysqlUserFinder, type UserFinder } from './routes/auth.js';
 import { storeManagementRouter } from './routes/store-management.js';
 import { mysqlStoresRouter } from './routes/mysql-stores.js';
-export function createApp(): Express {
+import { mysqlCommerceSource, unavailableCommerceSource, CommerceUnavailableError, type CommerceSource } from './routes/commerce-source.js';
+import { mysqlAssignmentLoader, resolveCommerceVisibility, type AssignmentLoader } from './routes/commerce-visibility.js';
+export interface AppOptions { commerce?: CommerceSource; findUser?: UserFinder; assignments?: AssignmentLoader; }
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
   app.use((req, res, next) => { res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); res.setHeader('Access-Control-Allow-Credentials', 'true'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); if (req.method === 'OPTIONS') return res.sendStatus(204); next(); });
   app.use(express.json());
@@ -26,18 +29,20 @@ export function createApp(): Express {
   app.use('/api', syncStatusRouter());
   app.use('/api', itemsRouter());
   app.use('/api', membersRouter());
-  const visibility = (req: express.Request) => { const session = authenticatedSession(req.headers.cookie); return session ? { tenantId: session.tenantId, role: session.role, storeIds: new Set<string>(), skus: new Set<string>(), customerFields: new Set<string>() } : undefined; };
-  app.use('/api', ordersRouter({ list: async () => [], visibility }));
-  app.use('/api', returnsRouter({ list: async () => [], visibility }));
+  const assignments = options.assignments ?? (process.env.MYSQL_URL ? mysqlAssignmentLoader() : async () => []);
+  const visibility = async (req: express.Request) => { const session = authenticatedSession(req.headers.cookie); return session ? resolveCommerceVisibility(session, assignments) : undefined; };
+  const commerce = options.commerce ?? (process.env.MYSQL_URL ? mysqlCommerceSource() : unavailableCommerceSource());
+  app.use('/api', ordersRouter({ list: commerce.listOrders, returns: commerce.listReturns, visibility }));
+  app.use('/api', returnsRouter({ list: commerce.listReturns, history: commerce.listReturnSnapshots, visibility }));
   app.use('/api', inventoryRouter());
   app.use('/api', wfsRouter());
   app.use('/api', overviewRouter());
   app.use('/api', performanceRouter());
   app.use('/api', pricingRouter());
   app.use('/api', opsRouter());
-  app.use('/api', authRouter());
+  app.use('/api', authRouter(options.findUser ?? (process.env.MYSQL_URL ? mysqlUserFinder() : undefined)));
   app.use('/api', process.env.MYSQL_URL ? mysqlStoresRouter() : storeManagementRouter());
-  const errors: ErrorRequestHandler = (error, _req, res, _next) => res.status(500).json({ requestId: res.locals.requestId, data: null, error: { message: error instanceof Error ? error.message : 'Internal Server Error' } });
+  const errors: ErrorRequestHandler = (error, _req, res, _next) => res.status(error instanceof CommerceUnavailableError ? 503 : 500).json({ requestId: res.locals.requestId, data: null, error: { message: error instanceof Error ? error.message : 'Internal Server Error' } });
   app.use(errors);
   return app;
 }

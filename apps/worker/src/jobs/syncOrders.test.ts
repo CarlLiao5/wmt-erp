@@ -25,3 +25,8 @@ it('upserts each stable line once when Walmart repeats it across pages', async (
   await replayOrderPages({ tenantId: 't', storeId: 's', from: '2026-01-02', to: '2026-01-03' }, async (query) => ({ orders: [{ purchaseOrderId: 'po-1', orderLines: { orderLine: [{ lineNumber: '1', item: { sku: 'A' } }] } }], nextCursor: query.nextCursor ? undefined : 'second' }), undefined, async (line) => { ids.push(line.id); });
   expect(ids).toEqual(['s:po-1:1']);
 });
+
+it('sums every PRODUCT charge without including shipping', () => {
+  const [line] = normalizeOrderPayload({ orders: [{ purchaseOrderId: 'p', orderLines: { orderLine: [{ lineNumber: '1', item: { sku: 'A' }, charges: { charge: [{ chargeType: 'PRODUCT', chargeAmount: { amount: 4 } }, { chargeType: 'SHIPPING', chargeAmount: { amount: 9 } }, { chargeType: 'PRODUCT', chargeAmount: { amount: 6 } }] } }] } }] }, { tenantId: 't', storeId: 's', rawResponseId: 'raw' });
+  expect(line.amount).toBe(10);
+});
