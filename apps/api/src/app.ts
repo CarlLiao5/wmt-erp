@@ -13,7 +13,7 @@ import { overviewRouter } from './routes/overview.js';
 import { performanceRouter } from './routes/performance.js';
 import { pricingRouter } from './routes/pricing.js';
 import { opsRouter } from './routes/ops.js';
-import { authRouter } from './routes/auth.js';
+import { authRouter, authenticatedSession } from './routes/auth.js';
 import { storeManagementRouter } from './routes/store-management.js';
 import { mysqlStoresRouter } from './routes/mysql-stores.js';
 export function createApp(): Express {
@@ -26,8 +26,9 @@ export function createApp(): Express {
   app.use('/api', syncStatusRouter());
   app.use('/api', itemsRouter());
   app.use('/api', membersRouter());
-  app.use('/api', ordersRouter());
-  app.use('/api', returnsRouter());
+  const visibility = (req: express.Request) => { const session = authenticatedSession(req.headers.cookie); return session ? { tenantId: session.tenantId, role: session.role, storeIds: new Set<string>(), skus: new Set<string>(), customerFields: new Set<string>() } : undefined; };
+  app.use('/api', ordersRouter({ list: async () => [], visibility }));
+  app.use('/api', returnsRouter({ list: async () => [], visibility }));
   app.use('/api', inventoryRouter());
   app.use('/api', wfsRouter());
   app.use('/api', overviewRouter());

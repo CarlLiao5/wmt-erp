@@ -1,6 +1,28 @@
-import { Router } from 'express';
-export interface OrderLine { orderId: string; storeId: string; sku: string; quantity: number; amount: number; }
-export interface OrderVisibility { role: 'admin' | 'member'; storeIds: Set<string>; skus: Set<string>; }
-export function filterVisibleOrderLines(lines: OrderLine[], v: OrderVisibility) { return v.role === 'admin' ? lines : lines.filter((l) => v.storeIds.has(l.storeId) || v.skus.has(l.sku)); }
+import { Router, type Request } from 'express';
+import type { ReturnRecord } from './returns.js';
+export interface OrderLine { id?: string; tenantId?: string; orderId: string; orderNumber?: string; storeId: string; sku: string; itemId?: string; quantity: number; amount: number; orderedAt?: string; status?: string; customer?: Record<string, string>; }
+export interface OrderVisibility { tenantId?: string; role: 'admin' | 'member'; storeIds: Set<string>; skus: Set<string>; customerFields?: Set<string>; }
+export function filterVisibleOrderLines<T extends OrderLine>(lines: T[], v: OrderVisibility): T[] { return lines.filter((line) => (!v.tenantId || line.tenantId === v.tenantId) && (v.role === 'admin' || v.storeIds.has(line.storeId) || v.skus.has(line.sku))); }
 export function orderMetrics(lines: OrderLine[]) { return { orders: new Set(lines.map((l) => l.orderId)).size, units: lines.reduce((n, l) => n + l.quantity, 0), revenue: lines.reduce((n, l) => n + l.amount, 0) }; }
-export function ordersRouter(list: () => Promise<OrderLine[]> = async () => []): Router { const r = Router(); r.get('/orders', async (_req, res, next) => { try { const lines = await list(); return res.json({ requestId: res.locals.requestId, data: { lines, metrics: orderMetrics(lines) }, error: null }); } catch (e) { return next(e); } }); return r; }
+export interface OrdersRouterOptions { list: () => Promise<OrderLine[]>; visibility: (req: Request) => OrderVisibility | undefined; returns?: () => Promise<ReturnRecord[]>; }
+const queryString = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
+function matching<T extends OrderLine>(lines: T[], query: Request['query']): T[] {
+  return lines.filter((line) => (!queryString(query.storeId) || line.storeId === query.storeId) && (!queryString(query.sku) || line.sku === query.sku) && (!queryString(query.itemId) || line.itemId === query.itemId) && (!queryString(query.orderNumber) || line.orderNumber === query.orderNumber) && (!queryString(query.status) || line.status === query.status) && (!queryString(query.from) || (line.orderedAt ?? '').slice(0, 10) >= String(query.from)) && (!queryString(query.to) || (line.orderedAt ?? '').slice(0, 10) <= String(query.to)));
+}
+function sanitize<T extends OrderLine>(line: T, visibility: OrderVisibility): T {
+  const { customer, ...safe } = line;
+  if (!customer) return safe as T;
+  const allowed = Object.fromEntries(Object.entries(customer).filter(([field]) => visibility.customerFields?.has(field)));
+  return { ...safe, ...(Object.keys(allowed).length ? { customer: allowed } : {}) } as T;
+}
+function pageOf<T>(rows: T[], query: Request['query']) { const page = Math.max(1, Number(query.page) || 1); const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20)); return { rows: rows.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: rows.length }; }
+export function ordersRouter(input: OrdersRouterOptions | (() => Promise<OrderLine[]>) = async () => []): Router {
+  const options: OrdersRouterOptions = typeof input === 'function' ? { list: input, visibility: () => undefined } : input;
+  const r = Router();
+  const visible = async (req: Request, v: OrderVisibility) => matching(filterVisibleOrderLines(await options.list(), v), req.query).map((line) => sanitize(line, v));
+  r.get('/orders', async (req, res, next) => { try { const v = options.visibility(req); if (!v?.tenantId) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: 'Authenticated visibility scope required' } }); const lines = await visible(req, v); const page = pageOf(lines, req.query); return res.json({ requestId: res.locals.requestId, data: { lines: page.rows, metrics: orderMetrics(lines), total: page.total, page: page.page, pageSize: page.pageSize }, error: null }); } catch (error) { return next(error); } });
+  r.get('/orders/export', async (req, res, next) => { try { const v = options.visibility(req); if (!v?.tenantId) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: 'Authenticated visibility scope required' } }); return res.json({ requestId: res.locals.requestId, data: { lines: await visible(req, v) }, error: null }); } catch (error) { return next(error); } });
+  r.get('/orders/:id', async (req, res, next) => { try { const v = options.visibility(req); if (!v?.tenantId) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: 'Authenticated visibility scope required' } }); const lines = filterVisibleOrderLines(await options.list(), v).filter((line) => line.orderId === req.params.id || line.orderNumber === req.params.id).map((line) => sanitize(line, v)); if (!lines.length) return res.status(404).json({ requestId: res.locals.requestId, data: null, error: { message: 'Order not found' } }); return res.json({ requestId: res.locals.requestId, data: { id: req.params.id, lines, metrics: orderMetrics(lines) }, error: null }); } catch (error) { return next(error); } });
+  r.get('/metrics/sales', async (req, res, next) => { try { const v = options.visibility(req); if (!v?.tenantId) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: 'Authenticated visibility scope required' } }); const lines = await visible(req, v); const metrics = orderMetrics(lines); const returns = options.returns ? await options.returns() : []; const visibleReturns = returns.filter((row) => row.tenantId === v.tenantId && (v.role === 'admin' || v.storeIds.has(row.storeId) || v.skus.has(row.sku)) && (!queryString(req.query.storeId) || row.storeId === req.query.storeId) && (!queryString(req.query.sku) || row.sku === req.query.sku)); const refunds = visibleReturns.filter((row) => row.status === 'REFUNDED').reduce((sum, row) => sum + row.amount, 0); return res.json({ requestId: res.locals.requestId, data: { ...metrics, refunds, returns: visibleReturns.length, returnRate: metrics.orders ? new Set(visibleReturns.map((row) => row.orderId)).size / metrics.orders : 0 }, error: null }); } catch (error) { return next(error); } });
+  return r;
+}
