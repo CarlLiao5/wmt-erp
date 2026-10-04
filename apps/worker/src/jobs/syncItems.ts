@@ -22,13 +22,15 @@ export function normalizeItemPayload(payload: unknown, context: { storeId: strin
     const row = value as Record<string, unknown>;
     const sku = String(row.sku ?? row.SKU ?? row.productId ?? row.itemId ?? '').trim();
     if (!sku) return [];
-    const id = String(row.id ?? row.itemId ?? sku);
+    const externalId = String(row.id ?? row.itemId ?? sku);
+    const id = `${context.storeId}:${externalId}`;
     const titleValue = row.title ?? row.productName ?? row.name;
     return [{ id, storeId: context.storeId, tenantId: context.tenantId, sku, itemId: typeof row.itemId === 'string' ? row.itemId : undefined, title: typeof titleValue === 'string' ? titleValue : undefined, updatedAt: now }];
   });
 }
 
 export async function upsertNormalizedItems(items: NormalizedItem[], upsert: (item: NormalizedItem) => Promise<unknown>): Promise<number> {
-  for (const item of items) await upsert(item);
-  return items.length;
+  const unique = new Map(items.map((item) => [`${item.storeId}:${item.sku}`, item]));
+  for (const item of unique.values()) await upsert(item);
+  return unique.size;
 }
