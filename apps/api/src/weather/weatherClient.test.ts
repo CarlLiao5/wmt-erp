@@ -6,7 +6,7 @@ describe('weather client', () => {
   it('returns a cached snapshot without issuing a request', async () => {
     const cached: StateWeatherSnapshot = { stateCode: 'CA', observedAt: new Date('2026-01-01'), current: { temperature: 20 }, forecast: [], alerts: [], raw: {} };
     const request = vi.fn();
-    const result = await fetchStateWeather(US_STATES_48.find((s) => s.code === 'CA')!, { request, cache: { get: async () => cached, set: vi.fn() } });
+    const result = await fetchStateWeather(US_STATES_48.find((s) => s.code === 'CA')!, { request, cache: { get: async <T>() => cached as unknown as T, set: vi.fn() } });
     expect(result).toEqual(cached);
     expect(request).not.toHaveBeenCalled();
   });
