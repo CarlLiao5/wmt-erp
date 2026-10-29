@@ -36,3 +36,10 @@ Latest fix commit: `ab7a623`.
 - Failure request status records the active weather/climate phase and retry budget attempts.
 
 Latest commit: `ded8f15`.
+
+## Final scoped review fix
+
+- Worker creates and routes the weather worker using `weatherQueueName` and shutdown closes weather queue, worker, and Redis.
+- Climate fetch receives the same minimum request interval used for weather requests.
+
+Latest commit: `a3398e2`.

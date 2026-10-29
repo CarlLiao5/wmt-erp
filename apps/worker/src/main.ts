@@ -4,7 +4,7 @@ import { startIncrementalScheduler } from './sync/scheduler.js';
 const { worker, redis, queue } = createSyncWorker(undefined, defaultSyncQueueName);
 const reports = createSyncWorker(undefined, reportsSyncQueueName, undefined, 2);
 const lingxing = createSyncWorker(undefined, lingxingSyncQueueName, undefined, lingxingWorkerConcurrency);
-const weather = createSyncWorker(undefined, 'weather-sync', undefined, 1);
+const weather = createSyncWorker(undefined, weatherQueueName, undefined, 1);
 const heartbeatKey = 'wmterp:worker:heartbeat';
 const writeHeartbeat = () => { void redis.set(heartbeatKey, String(Date.now()), 'EX', 30).catch((error) => console.error(`Worker heartbeat failed: ${error instanceof Error ? error.message : String(error)}`)); };
 writeHeartbeat();
@@ -17,7 +17,7 @@ const queueForResource = (resource: string) => {
   return queue;
 };
 const stopScheduler = startIncrementalScheduler(queue, undefined, queueForResource);
-const shutdown = async () => { stopScheduler(); clearInterval(heartbeatTimer); await redis.del(heartbeatKey); await Promise.all([queue.close(), reports.queue.close(), lingxing.queue.close(), worker.close(), reports.worker.close(), lingxing.worker.close(), redis.quit(), reports.redis.quit(), lingxing.redis.quit(), weather.redis.quit()]); };
+const shutdown = async () => { stopScheduler(); clearInterval(heartbeatTimer); await redis.del(heartbeatKey); await Promise.all([queue.close(), reports.queue.close(), lingxing.queue.close(), weather.queue.close(), worker.close(), reports.worker.close(), lingxing.worker.close(), weather.worker.close(), redis.quit(), reports.redis.quit(), lingxing.redis.quit(), weather.redis.quit()]); };
 process.once('SIGINT', () => { void shutdown(); });
 process.once('SIGTERM', () => { void shutdown(); });
 worker.on('failed', (job, error) => { console.error(`Sync job ${job?.id ?? 'unknown'} failed: ${error.message}`); });
