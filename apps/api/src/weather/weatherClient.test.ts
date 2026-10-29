@@ -15,7 +15,7 @@ describe('weather client', () => {
     const request = vi.fn().mockResolvedValueOnce({ status: 429, headers: new Headers({ 'retry-after': '0' }) }).mockResolvedValue({ status: 200, ok: true, headers: new Headers(), json: async () => ({ properties: {} }) });
     const sleep = vi.fn(async () => undefined);
     await fetchStateWeather(US_STATES_48[0], { request, cache: { get: async () => undefined, set: vi.fn() }, sleep, maxRetries: 1 });
-    expect(request).toHaveBeenCalledTimes(4);
+    expect(request).toHaveBeenCalledTimes(5);
     expect(request.mock.calls[0][1].headers['User-Agent']).toContain('wmterp');
     expect(sleep).toHaveBeenCalledWith(expect.any(Number));
   });
