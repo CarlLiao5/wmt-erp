@@ -32,4 +32,9 @@ describe('weather client', () => {
     const request = vi.fn().mockResolvedValue({ status: 200, headers: new Headers(), json: async () => ({ html: '<table />' }) });
     await expect(fetchStateClimate(US_STATES_48[0], '6-10-day', { request, cache: { get: async () => undefined, set: vi.fn() } })).rejects.toThrow(/unavailable/);
   });
+
+  it('converts a successful HTML response into a controlled climate error', async () => {
+    const request = vi.fn().mockResolvedValue({ status: 200, headers: new Headers({ 'content-type': 'text/html' }), text: async () => '<!DOCTYPE html><html></html>', json: async () => { throw new SyntaxError(`Unexpected token '<'`); } });
+    await expect(fetchStateClimate(US_STATES_48[0], '6-10-day', { request, cache: { get: async () => undefined, set: vi.fn() } })).rejects.toThrow(/CPC climate response unavailable: Weather service returned a non-JSON response/);
+  });
 });
