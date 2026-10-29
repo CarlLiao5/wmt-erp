@@ -17,3 +17,12 @@ Verification: `pnpm --filter @walmart-erp/api exec vitest run src/weather/weathe
 - Added weather resource allowlist and worker request status persistence.
 
 Fix commit: current HEAD.
+
+## Remaining review fixes
+
+- Weather now fetches point, observations, daily forecast, hourly forecast, and alerts sequentially with a minimum interval.
+- Retries are limited to 429, 5xx, and timeout/abort failures; 4xx and JSON errors fail immediately.
+- Climate periods are a strict union with CPC endpoint mapping.
+- Worker persists forecast rows and failed request status, and closes the weather queue/worker/Redis resources on shutdown.
+
+Latest fix commit: `ab7a623`.

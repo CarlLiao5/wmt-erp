@@ -17,7 +17,7 @@ const queueForResource = (resource: string) => {
   return queue;
 };
 const stopScheduler = startIncrementalScheduler(queue, undefined, queueForResource);
-const shutdown = async () => { stopScheduler(); clearInterval(heartbeatTimer); await redis.del(heartbeatKey); await Promise.all([queue.close(), reports.queue.close(), lingxing.queue.close(), worker.close(), reports.worker.close(), lingxing.worker.close(), redis.quit(), reports.redis.quit(), lingxing.redis.quit()]); };
+const shutdown = async () => { stopScheduler(); clearInterval(heartbeatTimer); await redis.del(heartbeatKey); await Promise.all([queue.close(), reports.queue.close(), lingxing.queue.close(), worker.close(), reports.worker.close(), lingxing.worker.close(), redis.quit(), reports.redis.quit(), lingxing.redis.quit(), weather.redis.quit()]); };
 process.once('SIGINT', () => { void shutdown(); });
 process.once('SIGTERM', () => { void shutdown(); });
 worker.on('failed', (job, error) => { console.error(`Sync job ${job?.id ?? 'unknown'} failed: ${error.message}`); });
