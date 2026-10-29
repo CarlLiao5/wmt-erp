@@ -1,4 +1,4 @@
-import { createSyncWorker, defaultSyncQueueName, lingxingSyncQueueName, lingxingWorkerConcurrency, reportsSyncQueueName, syncQueueNameForResource } from './queue.js';
+import { createSyncWorker, defaultSyncQueueName, lingxingSyncQueueName, lingxingWorkerConcurrency, reportsSyncQueueName, syncQueueNameForResource, weatherQueueName } from './queue.js';
 import { startIncrementalScheduler } from './sync/scheduler.js';
 
 const { worker, redis, queue } = createSyncWorker(undefined, defaultSyncQueueName);
@@ -13,7 +13,7 @@ const queueForResource = (resource: string) => {
   const queueName = syncQueueNameForResource(resource);
   if (queueName === lingxingSyncQueueName) return lingxing.queue;
   if (queueName === reportsSyncQueueName) return reports.queue;
-  if (queueName === 'weather-sync') return weather.queue;
+  if (queueName === weatherQueueName) return weather.queue;
   return queue;
 };
 const stopScheduler = startIncrementalScheduler(queue, undefined, queueForResource);

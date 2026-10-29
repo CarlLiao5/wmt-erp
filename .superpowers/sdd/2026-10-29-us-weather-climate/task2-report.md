@@ -26,3 +26,13 @@ Fix commit: current HEAD.
 - Worker persists forecast rows and failed request status, and closes the weather queue/worker/Redis resources on shutdown.
 
 Latest fix commit: `ab7a623`.
+
+## Scoped re-review fixes
+
+- Shutdown now closes weather queue, worker, and Redis through `weatherQueueName`.
+- Retry classification covers every 5xx and 429 plus timeout, while JSON parsing errors remain non-retryable.
+- Added pacing between points and downstream requests and climate calls.
+- Climate responses must be JSON objects; unavailable/HTML responses fail explicitly.
+- Failure request status records the active weather/climate phase and retry budget attempts.
+
+Latest commit: `ded8f15`.
