@@ -1,0 +1,8 @@
+import {createDb} from '../packages/db/src/db.js';
+import {randomUUID} from 'node:crypto';
+const {pool}=createDb();const tenantId='default';
+try{
+const [stores]:any=await pool.query('SELECT DISTINCT s.id,s.name FROM stores s INNER JOIN store_credentials c ON c.tenant_id COLLATE utf8mb4_unicode_ci=s.tenant_id COLLATE utf8mb4_unicode_ci AND c.store_id COLLATE utf8mb4_unicode_ci=s.id COLLATE utf8mb4_unicode_ci WHERE s.tenant_id=? AND s.environment=? AND EXISTS (SELECT 1 FROM wfs_shipments w WHERE w.tenant_id COLLATE utf8mb4_unicode_ci=s.tenant_id COLLATE utf8mb4_unicode_ci AND w.store_id COLLATE utf8mb4_unicode_ci=s.id COLLATE utf8mb4_unicode_ci)',[tenantId,'production']);
+for(const store of stores){const now=new Date();await pool.query(`INSERT INTO sync_plans (id,tenant_id,store_id,resource,mode,status,interval_minutes,overlap_days,next_run_at,enabled,created_at,updated_at) VALUES (?,?,?,'wfs-inbound-preview','incremental','planned',1440,5,?,1,?,?) ON DUPLICATE KEY UPDATE interval_minutes=1440,overlap_days=5,enabled=1,next_run_at=VALUES(next_run_at),updated_at=VALUES(updated_at)`,[randomUUID(),tenantId,store.id,now,now,now]);}
+const [plans]=await pool.query("SELECT p.store_id,s.name,p.resource,p.enabled,p.interval_minutes,p.next_run_at FROM sync_plans p JOIN stores s ON s.tenant_id COLLATE utf8mb4_unicode_ci=p.tenant_id COLLATE utf8mb4_unicode_ci AND s.id COLLATE utf8mb4_unicode_ci=p.store_id COLLATE utf8mb4_unicode_ci WHERE p.tenant_id=? AND p.resource='wfs-inbound-preview' AND p.mode='incremental'",[tenantId]);console.log(JSON.stringify({plans}));
+}catch(e){console.error(e instanceof Error?e.message:String(e));process.exitCode=1;}process.exit(process.exitCode??0);

@@ -1,0 +1,18 @@
+import {it,expect} from 'vitest';
+import {runReviewPages} from './syncProductReviews.js';
+const page=(nextPageUrl:string|null)=>({reviews:[],nextPageUrl,contentHash:String(nextPageUrl),explicitEmpty:false});
+it('incremental never follows second page',async()=>{let reads=0;const result=await runReviewPages({mode:'incremental',startUrl:'first',pageBudget:9,read:async()=>{reads++;return page('second');},save:async()=>{},shouldStop:async()=>false});expect(reads).toBe(1);expect(result.status).toBe('completed');});
+it('saves budget checkpoint and pauses',async()=>{const urls:string[]=[];const result=await runReviewPages({mode:'initial',startUrl:'first',pageBudget:1,read:async()=>page('second'),save:async(_p,url)=>{urls.push(url);},shouldStop:async()=>false});expect(urls).toEqual(['first']);expect(result).toMatchObject({status:'paused',nextUrl:'second'});});
+it('stops before the next page when user pauses',async()=>{let reads=0;const result=await runReviewPages({mode:'initial',startUrl:'first',pageBudget:3,read:async()=>{reads++;return page('second');},save:async()=>{},shouldStop:async()=>reads===1});expect(reads).toBe(1);expect(result.status).toBe('paused');});
+it('does not mark repeated pages complete',async()=>{const result=await runReviewPages({mode:'initial',startUrl:'first',pageBudget:3,read:async()=>page('first'),save:async()=>{},shouldStop:async()=>false});expect(result.status).toBe('paused');});
+
+it('finalizes a previously completed initial target on worker recovery',async()=>{
+ const writes:Array<{sql:string;values:unknown[]}> = [];
+ const pool:any={getConnection:async()=>({query:async(sql:string)=>[[{acquired:1}],[]],release:()=>{}}),query:async(sql:string,values:unknown[])=>{writes.push({sql,values});return [[],[]];}};
+ const repo:any={pool,getTarget:async()=>({initialStatus:'completed',status:'running',stopRequested:0})};
+ const {syncProductReviews}=await import('./syncProductReviews.js');
+ await syncProductReviews({tenantId:'t',storeId:'__tenant__',resource:'product-reviews',window:{from:'',to:''},batchId:'r',state:{itemId:'123',mode:'initial'}},{repo});
+ expect(writes.some(w=>w.sql.includes("SET status='completed'")&&w.sql.includes('product_review_targets'))).toBe(true);
+});
+it('persists paused state when stopping a queued target',async()=>{const sql:string[]=[];const repo:any={pool:{getConnection:async()=>({query:async()=>[[{acquired:1}],[]],release:()=>{}}),query:async(q:string)=>{sql.push(q);return [[],[]];}},getTarget:async()=>({initialStatus:'pending',status:'queued',stopRequested:1})};const {syncProductReviews}=await import('./syncProductReviews.js');await syncProductReviews({tenantId:'t',storeId:'__tenant__',resource:'product-reviews',window:{from:'',to:''},state:{itemId:'123',mode:'initial'}},{repo});expect(sql.some(q=>q.includes("status='paused'"))).toBe(true);});
+it('does not resubmit an incremental page already committed before restart',async()=>{const statements:string[]=[];const repo:any={pool:{getConnection:async()=>({query:async()=>[[{acquired:1}],[]],release:()=>{}}),query:async(q:string)=>{statements.push(q);return q.includes('product_review_pages')?[[{id:'done'}],[]]:[[],[]];}},getTarget:async()=>({initialStatus:'completed',status:'running',stopRequested:0})};const {syncProductReviews}=await import('./syncProductReviews.js');const result=await syncProductReviews({tenantId:'t',storeId:'__tenant__',resource:'product-reviews',window:{from:'',to:''},batchId:'r',state:{itemId:'123',mode:'incremental'}},{repo});expect(result.status).toBe('completed');expect(statements.some(q=>q.includes('product_review_configs'))).toBe(false);});

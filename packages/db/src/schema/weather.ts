@@ -1,4 +1,5 @@
 import { datetime, decimal, index, int, json, mysqlTable, text, unique, varchar } from 'drizzle-orm/mysql-core';
+import { desc } from 'drizzle-orm';
 
 export const weatherSnapshots = mysqlTable('weather_snapshots', {
   id: varchar('id', { length: 36 }).primaryKey(),
@@ -12,7 +13,7 @@ export const weatherSnapshots = mysqlTable('weather_snapshots', {
   cacheExpiresAt: datetime('cache_expires_at', { mode: 'date', fsp: 3 }),
   rawPayload: json('raw_payload'),
   createdAt: datetime('created_at', { mode: 'date', fsp: 3 }).notNull(),
-}, (table) => [index('weather_snapshots_state_time_idx').on(table.stateCode, table.observedAt), index('weather_snapshots_source_idx').on(table.source, table.sourceUpdatedAt)]);
+}, (table) => [index('weather_snapshots_state_time_idx').on(table.stateCode, table.observedAt), index('weather_snapshots_state_latest_idx').on(table.stateCode, table.value, desc(table.observedAt), desc(table.createdAt)), index('weather_snapshots_source_idx').on(table.source, table.sourceUpdatedAt)]);
 
 export const weatherForecasts = mysqlTable('weather_forecasts', {
   id: varchar('id', { length: 36 }).primaryKey(),

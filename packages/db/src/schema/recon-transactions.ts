@@ -1,0 +1,37 @@
+import { datetime, decimal, index, int, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core';
+
+export const reconTransactions = mysqlTable('recon_transactions', {
+  id: varchar('id', { length: 64 }).primaryKey(),
+  tenantId: varchar('tenant_id', { length: 36 }).notNull(),
+  storeId: varchar('store_id', { length: 36 }).notNull(),
+  reportMonth: varchar('report_month', { length: 7 }).notNull(),
+  sourceId: varchar('source_id', { length: 191 }).notNull(),
+  // Report-scoped row identity keeps repeated identical lines distinct across pages and replays.
+  transactionKey: varchar('transaction_key', { length: 64 }).notNull(),
+  rowNumber: int('row_number').notNull(),
+  customerOrderId: varchar('customer_order_id', { length: 191 }),
+  purchaseOrderId: varchar('purchase_order_id', { length: 191 }),
+  purchaseOrderLine: varchar('purchase_order_line', { length: 32 }),
+  shipQty: decimal('ship_qty', { precision: 19, scale: 4 }),
+  billTransactionKey: varchar('bill_transaction_key', { length: 191 }),
+  sku: varchar('sku', { length: 191 }),
+  amountType: varchar('amount_type', { length: 191 }),
+  transactionId: varchar('transaction_id', { length: 191 }),
+  transactionDate: datetime('transaction_date', { mode: 'date', fsp: 3 }),
+  periodStartDate: datetime('period_start_date', { mode: 'date', fsp: 3 }),
+  periodEndDate: datetime('period_end_date', { mode: 'date', fsp: 3 }),
+  description: varchar('description', { length: 255 }).notNull(),
+  transactionType: varchar('transaction_type', { length: 128 }),
+  amount: decimal('amount', { precision: 19, scale: 4 }).notNull(),
+  currency: varchar('currency', { length: 8 }).notNull(),
+  receivedAt: datetime('received_at', { mode: 'date', fsp: 3 }).notNull(),
+}, (table) => [
+  unique('recon_transaction_source_key_unique').on(table.tenantId, table.storeId, table.sourceId, table.transactionKey),
+  index('recon_transaction_scope_month_idx').on(table.tenantId, table.storeId, table.reportMonth),
+  index('recon_transaction_scope_date_idx').on(table.tenantId, table.storeId, table.transactionDate),
+  index('recon_transaction_description_idx').on(table.tenantId, table.storeId, table.description),
+  index('recon_customer_order_idx').on(table.tenantId, table.storeId, table.customerOrderId),
+  index('recon_purchase_order_idx').on(table.tenantId, table.storeId, table.purchaseOrderId),
+  index('recon_sku_fee_idx').on(table.tenantId, table.sku),
+  index('recon_transaction_type_idx').on(table.tenantId, table.storeId, table.transactionType),
+]);

@@ -1,0 +1,3 @@
+CREATE TABLE `wfs_inventory_logs` (`id` varchar(191) NOT NULL, `tenant_id` varchar(36) NOT NULL, `store_id` varchar(36) NOT NULL, `sku` varchar(191) NOT NULL, `gtin` varchar(32) NOT NULL, `fc_id` varchar(64), `fc_name` varchar(128), `changed_units` int, `transaction_time` datetime(3), `transaction_location` varchar(128), `reason_code` varchar(64), `reason_description` varchar(255), `transaction_type` varchar(64), `shipment_id` varchar(128), `created_at` datetime(3) NOT NULL, CONSTRAINT `wfs_inventory_logs_id` PRIMARY KEY(`id`));
+--> statement-breakpoint
+CREATE INDEX `wfs_inventory_logs_scope_idx` ON `wfs_inventory_logs` (`tenant_id`,`store_id`,`sku`,`transaction_time`);

@@ -1,0 +1,4 @@
+import {createDb} from '../packages/db/src/db.js';
+import {mysqlInventorySource} from '../apps/api/src/routes/inventory.js';
+import {writeFile} from 'node:fs/promises';
+const {pool}=createDb();const query=pool.query.bind(pool);(pool as any).query=async(...args:any[])=>{const t=performance.now();const r=await (query as any)(...args);console.log(JSON.stringify({ms:Math.round(performance.now()-t),rows:Array.isArray(r[0])?r[0].length:null,sql:String(args[0]?.sql??args[0]).replace(/\s+/g,' ').slice(0,150)}));return r;};try{const t=performance.now();const rows=await mysqlInventorySource()('default');if(process.env.INVENTORY_OUTPUT)await writeFile(process.env.INVENTORY_OUTPUT,JSON.stringify(rows));console.log(JSON.stringify({totalMs:Math.round(performance.now()-t),rows:rows.length}));}catch(e){console.error(e);process.exitCode=1;}process.exit(process.exitCode??0);

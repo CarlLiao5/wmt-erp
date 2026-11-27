@@ -1,0 +1,18 @@
+import {createDb} from '../packages/db/src/db.js';
+import {createSyncQueue,reportQueueNameForStore,mysqlConnectionLoader} from '../apps/worker/src/queue.js';
+import {getAccessToken} from '../packages/walmart-client/src/auth/token.js';
+import {randomUUID} from 'node:crypto';
+const {pool}=createDb();
+const [processes]:any=await pool.query('SHOW FULL PROCESSLIST');
+console.log('dbActive',processes.filter((r:any)=>r.Command!=='Sleep'&&r.Info!=='SHOW FULL PROCESSLIST').map((r:any)=>({id:r.Id,time:r.Time,state:r.State,query:String(r.Info??'').slice(0,170)})));
+const [runs]:any=await pool.query("SELECT resource,MAX(received_at) latest,COUNT(*) n FROM raw_payloads WHERE store_id='10001133528' AND received_at>UTC_TIMESTAMP()-INTERVAL 5 HOUR AND resource IN ('item-report','advertising-sem-search-terms') GROUP BY resource");
+console.log('recentSaved',runs);
+const q=createSyncQueue(undefined,reportQueueNameForStore('10001133528'));
+console.log('active', (await q.queue.getJobs(['active'])).map(j=>({resource:j.data.resource,startedAt:j.processedOn,id:j.id})));
+await q.queue.close();await q.redis.quit();
+const c=await mysqlConnectionLoader({tenantId:'default',storeId:'10001133528',resource:'item-report',window:{from:'',to:''}});
+const {accessToken}=await getAccessToken(c);
+const r=await fetch(new URL('/v3/reports/reportRequests?limit=10',c.baseUrl),{headers:{'WM_SEC.ACCESS_TOKEN':accessToken,'WM_QOS.CORRELATION_ID':randomUUID(),'WM_SVC.NAME':'Walmart Marketplace',Accept:'application/json'},signal:AbortSignal.timeout(20000)});
+const data=await r.json();
+console.log('walmartReportList',r.status,JSON.stringify(data).slice(0,14000));
+process.exit(0);

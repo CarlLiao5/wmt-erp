@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {createDb} from '../packages/db/src/db.js';
+import {mysqlItemsSource} from '../apps/api/src/routes/items.js';
+import {mysqlInventorySource} from '../apps/api/src/routes/inventory.js';
+import {mysqlProductImageResolver} from '../apps/api/src/routes/product-images.js';
+import {buildAllSkuChineseNameMap,buildAllSkuOwnerMap} from '../apps/api/src/routes/allskuOwnerMapping.js';
+const {pool}=createDb();
+try{
+ const tenantId='default';const [rows]:any=await pool.query('SELECT sku,store_name AS storeName,product_name AS productName,owner_name AS ownerName,payload FROM smartsheet_allsku_rows WHERE tenant_id=?',[tenantId]);
+ const [stores]:any=await pool.query('SELECT id,name FROM stores WHERE tenant_id=?',[tenantId]);
+ const [catalog]:any=await pool.query('SELECT id,store_id AS storeId,external_id AS externalId FROM skus WHERE tenant_id=?',[tenantId]);
+ const [members]:any=await pool.query('SELECT id,display_name AS displayName FROM users WHERE tenant_id=?',[tenantId]);
+ const oldRows=rows.map((r:any)=>({payload:typeof r.payload==='string'?JSON.parse(r.payload):r.payload}));
+ const normalize=(m:Map<string,unknown>)=>[...m].sort(([a],[b])=>a.localeCompare(b));
+ assert.deepEqual(normalize(buildAllSkuChineseNameMap(rows,stores)),normalize(buildAllSkuChineseNameMap(oldRows,stores)));
+ assert.deepEqual(normalize(buildAllSkuOwnerMap(rows,stores,catalog,members)),normalize(buildAllSkuOwnerMap(oldRows,stores,catalog,members)));
+ const items=await mysqlItemsSource()(tenantId);assert(items.length>0);assert(items.every(item=>!('details' in item)));
+ const images=await mysqlProductImageResolver()(tenantId,items.map(r=>({storeId:r.storeId,sku:r.sku})));
+ const inventory=await mysqlInventorySource()(tenantId);
+ console.log(JSON.stringify({nameAndOwnerMappingParity:true,items:items.length,itemsWithItemId:items.filter(x=>x.itemId).length,itemsWithChineseName:items.filter(x=>x.chineseName).length,images:images.size,inventory:inventory.length,inventoryWithChineseName:inventory.filter(x=>x.chineseName).length,inventoryWithImage:inventory.filter(x=>x.imageUrl).length,rawDetailsExcluded:true}));
+}catch(error){console.error(error instanceof Error?error.message:String(error));process.exitCode=1;}finally{await pool.end();}process.exit(process.exitCode??0);

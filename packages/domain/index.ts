@@ -2,6 +2,7 @@ export * from './src/permissions.js';
 export * from './src/scope.js';
 export * from './src/money.js';
 export * from './src/metrics.js';
+export * from './src/orderStatus.js';
 export * from './src/formulaVersions.js';
 export * from './src/syncPolicies.js';
 export * from './src/brightdataSchedule.js';

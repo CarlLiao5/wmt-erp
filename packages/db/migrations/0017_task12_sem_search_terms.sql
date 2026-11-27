@@ -1,0 +1,21 @@
+CREATE TABLE sem_search_terms_daily (
+  id varchar(64) NOT NULL,
+  tenant_id varchar(36) NOT NULL,
+  store_id varchar(36) NOT NULL,
+  report_date date NOT NULL,
+  campaign_id varchar(191) NOT NULL,
+  campaign_name varchar(255) NULL,
+  search_term varchar(500) NOT NULL,
+  sku varchar(191) NOT NULL,
+  item_id varchar(191) NULL,
+  impressions int NULL,
+  clicks int NULL,
+  ctr decimal(19,8) NULL,
+  ad_spend decimal(19,4) NULL,
+  currency varchar(3) NULL DEFAULT 'USD',
+  source_id varchar(191) NOT NULL,
+  payload json NULL,
+  received_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY sem_search_terms_daily_scope_idx (tenant_id, store_id, report_date, sku)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

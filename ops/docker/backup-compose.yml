@@ -1,0 +1,16 @@
+services:
+  mysql-backup:
+    image: mysql:8.4
+    profiles: [backup]
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST:-mysql}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_USER: ${MYSQL_USER:-walmart}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-walmart_erp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:?Set BACKUP_AGE_RECIPIENT}
+    volumes:
+      - ./ops/backup:/opt/walmart-erp/backup:ro
+      - ${BACKUP_OUTPUT_DIR:?Set BACKUP_OUTPUT_DIR}:/var/backups/walmart-erp
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["set -euo pipefail; arch=amd64; checksum=7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50; if [ \"$$(uname -m)\" = aarch64 ]; then arch=arm64; checksum=57fd79a7ece5fe501f351b9dd51a82fbee1ea8db65a8839db17f5c080245e99f; fi; curl -fsSL https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-$${arch}.tar.gz -o /tmp/age.tar.gz; echo \"$${checksum}  /tmp/age.tar.gz\" | sha256sum -c -; tar -xz -C /tmp -f /tmp/age.tar.gz; install /tmp/age/age /usr/local/bin/age; bash /opt/walmart-erp/backup/backup.sh --output-dir /var/backups/walmart-erp --host $${MYSQL_HOST} --port $${MYSQL_PORT} --user $${MYSQL_USER} --database $${MYSQL_DATABASE} --age-recipient $${BACKUP_AGE_RECIPIENT}"]

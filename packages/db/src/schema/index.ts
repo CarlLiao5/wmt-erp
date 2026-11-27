@@ -4,6 +4,9 @@ export * from './sync.js';
 export * from './sync-plans.js';
 export * from './catalog.js';
 export * from './orders.js';
+export * from './return-records.js';
+export * from './return-status-events.js';
+export * from './recon-transactions.js';
 export * from './inventory.js';
 export * from './inventory-logs.js';
 export * from './analytics.js';
@@ -21,3 +24,9 @@ export * from './freight-tracking.js';
 export * from './lingxing.js';
 export * from './lingxing-shipment-costs.js';
 export * from './weather.js';
+export * from './wfs-fee-previews.js';
+
+export * from "./product-reviews.js";
+export * from './wfs-shipments.js';
+
+export * from './normalized-extensions.js';

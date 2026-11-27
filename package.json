@@ -12,7 +12,9 @@
     "test": "node --test scripts/smoke-workspace.mjs",
     "test:readonly-contract": "pnpm --filter @walmart-erp/testkit test:readonly-contract",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "audit:prod": "pnpm audit --prod",
+    "release:gate": "bash scripts/task13-release-gate.sh"
   },
   "devDependencies": {
     "@types/node": "22.13.4",

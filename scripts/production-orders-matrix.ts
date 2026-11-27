@@ -1,0 +1,5 @@
+import { mysqlConnectionLoader } from '../apps/worker/src/queue.js';
+import { walmartGet } from '../packages/walmart-client/src/transport.js';
+const c=await mysqlConnectionLoader({tenantId:'default',storeId:'prod-001',resource:'orders',window:{from:'2026-04-08',to:'2026-10-05'}});
+const windows=[['created',{createdStartDate:'2026-04-08',createdEndDate:'2026-10-05'}],['modified',{lastModifiedStartDate:'2026-04-08',lastModifiedEndDate:'2026-10-05'}]] as const;
+for(const [name,range] of windows) for(const shipNodeType of ['SellerFulfilled','WFSFulfilled','']) { try { const q={...range,limit:'200',...(shipNodeType?{shipNodeType}:{})}; const r=await walmartGet<any>(c,'/v3/orders',{query:q,maxAttempts:1}); const list=r.data?.list; console.log(JSON.stringify({name,shipNodeType:shipNodeType||'all',status:r.status,total:list?.meta?.totalCount,returned:Array.isArray(list?.elements?.order)?list.elements.order.length:0,nextCursor:Boolean(list?.meta?.nextCursor)})); } catch(e) { console.log(JSON.stringify({name,shipNodeType:shipNodeType||'all',error:e instanceof Error?e.message:'failed'})); }}

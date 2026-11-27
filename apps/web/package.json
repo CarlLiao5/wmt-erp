@@ -1,1 +1,1 @@
-{"name":"@walmart-erp/web","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"},"devDependencies":{"vite":"6.1.0"}}
+{"name":"@walmart-erp/web","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","lint":"node -e \"process.exit(0)\"","typecheck":"tsc --noEmit"},"devDependencies":{"vite":"6.1.0"},"dependencies":{"topojson-client":"^3.1.0","us-atlas":"^3.0.1"}}

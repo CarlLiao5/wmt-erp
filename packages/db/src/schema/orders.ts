@@ -1,3 +1,57 @@
-import { datetime, decimal, index, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core';
-export const orders = mysqlTable('orders', { id: varchar('id',{length:36}).primaryKey(), tenantId: varchar('tenant_id',{length:36}).notNull(), storeId: varchar('store_id',{length:36}).notNull(), externalId: varchar('external_id',{length:191}).notNull(), status: varchar('status',{length:40}).notNull(), orderedAt: datetime('ordered_at',{mode:'date',fsp:3}).notNull(), totalAmount: decimal('total_amount',{precision:19,scale:4}).notNull(), currency: varchar('currency',{length:3}).notNull(), updatedAt: datetime('updated_at',{mode:'date',fsp:3}).notNull() }, (t)=>[unique('orders_store_external_unique').on(t.storeId,t.externalId), index('orders_scope_time_idx').on(t.tenantId,t.storeId,t.orderedAt)]);
-export const orderLines = mysqlTable('order_lines', { id: varchar('id',{length:36}).primaryKey(), tenantId: varchar('tenant_id',{length:36}).notNull(), storeId: varchar('store_id',{length:36}).notNull(), orderId: varchar('order_id',{length:36}).notNull(), skuId: varchar('sku_id',{length:36}).notNull(), quantity: decimal('quantity',{precision:19,scale:4}).notNull(), lineAmount: decimal('line_amount',{precision:19,scale:4}).notNull(), currency: varchar('currency',{length:3}).notNull() }, (t)=>[index('order_lines_scope_idx').on(t.tenantId,t.storeId,t.skuId)]);
+import { datetime, decimal, index, int, mysqlTable, tinyint, unique, varchar } from 'drizzle-orm/mysql-core';
+import { asc, desc } from 'drizzle-orm';
+
+export const orders = mysqlTable('orders', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  tenantId: varchar('tenant_id', { length: 36 }).notNull(),
+  storeId: varchar('store_id', { length: 36 }).notNull(),
+  externalId: varchar('external_id', { length: 191 }).notNull(),
+  customerOrderId: varchar('customer_order_id', { length: 64 }),
+  customerEmail: varchar('customer_email', { length: 255 }),
+  status: varchar('status', { length: 40 }).notNull(),
+  region: varchar('region', { length: 80 }),
+  state: varchar('state', { length: 64 }),
+  postalCode: varchar('postal_code', { length: 20 }),
+  city: varchar('city', { length: 128 }),
+  country: varchar('country', { length: 64 }),
+  orderedAt: datetime('ordered_at', { mode: 'date', fsp: 3 }),
+  estimatedDeliveryAt: datetime('estimated_delivery_at', { mode: 'date', fsp: 3 }),
+  totalAmount: decimal('total_amount', { precision: 19, scale: 4 }),
+  currency: varchar('currency', { length: 8 }),
+  fulfillmentOption: varchar('fulfillment_option', { length: 32 }),
+  shipMethod: varchar('ship_method', { length: 64 }),
+  isWfs: tinyint('is_wfs'),
+  storeName: varchar('store_name', { length: 128 }),
+  sourceApi: varchar('source_api', { length: 32 }),
+  updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
+}, (table) => [
+  unique('orders_store_external_unique').on(table.storeId, table.externalId),
+  index('orders_scope_time_idx').on(table.tenantId, table.storeId, table.orderedAt),
+  index('orders_tenant_time_idx').on(table.tenantId, table.orderedAt),
+  index('orders_tenant_ordered_id_idx').on(table.tenantId, desc(table.orderedAt), asc(table.id)),
+  index('orders_customer_order_idx').on(table.tenantId, table.customerOrderId),
+]);
+
+export const orderLines = mysqlTable('order_lines', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  tenantId: varchar('tenant_id', { length: 36 }).notNull(),
+  storeId: varchar('store_id', { length: 36 }).notNull(),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
+  skuId: varchar('sku_id', { length: 36 }).notNull(),
+  lineNumber: varchar('line_number', { length: 32 }),
+  upc: varchar('upc', { length: 32 }),
+  productId: varchar('product_id', { length: 128 }),
+  productName: varchar('product_name', { length: 512 }),
+  quantity: decimal('quantity', { precision: 19, scale: 4 }),
+  unitPrice: decimal('unit_price', { precision: 19, scale: 4 }),
+  lineAmount: decimal('line_amount', { precision: 19, scale: 4 }),
+  shippingCharge: decimal('shipping_charge', { precision: 19, scale: 4 }),
+  currency: varchar('currency', { length: 8 }),
+  itemStatus: varchar('item_status', { length: 32 }),
+  createdAt: datetime('created_at', { mode: 'date', fsp: 3 }),
+  updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }),
+}, (table) => [
+  index('order_lines_scope_idx').on(table.tenantId, table.storeId, table.skuId),
+  index('order_lines_order_scope_idx').on(table.tenantId, table.orderId),
+  index('order_lines_store_sku_idx').on(table.storeId, table.skuId),
+]);

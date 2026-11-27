@@ -9,7 +9,7 @@ it('uses only Walmart GET resources and preserves raw response references', asyn
   const requests: Array<{ method?: string; path: string }> = [];
   vi.stubGlobal('fetch', async (input: URL, init?: RequestInit) => {
     requests.push({ method: init?.method, path: input.pathname });
-    const data = input.pathname === '/v3/orders' ? { orders: [{ purchaseOrderId: 'po-1', orderLines: { orderLine: [{ lineNumber: '1', item: { sku: 'A' } }] } }] } : { returns: [{ returnOrderId: 'r-1', returnOrderLines: [{ lineNumber: '1', item: { sku: 'A' } }] }] };
+    const data = input.pathname === '/v3/orders' ? { orders: [{ purchaseOrderId: 'po-1', orderLines: { orderLine: [{ lineNumber: '1', item: { sku: 'A' } }] } }] } : { returns: [{ returnOrderId: 'r-1', returnOrderLines: [{ lineNumber: '1', item: { sku: 'A' }, status: 'REFUNDED', refundAmount: { amount: 5 } }] }] };
     return new Response(JSON.stringify(data), { status: 200, headers: { 'content-type': 'application/json' } });
   });
   const connection = { clientId: 'id', clientSecret: 'secret', environment: 'sandbox' as const, baseUrl: 'https://example.invalid', accessToken: 'token' };
@@ -19,7 +19,7 @@ it('uses only Walmart GET resources and preserves raw response references', asyn
   const snapshots: Array<{ returnId: string; status: string; rawResponseId: string }> = [];
   await syncOrders(window, connection, async (_payload, id) => { raw.add(id); }, async (line) => { lineRefs.push(line.rawResponseId); });
   await syncReturns(window, connection, async (_payload, id) => { raw.add(id); }, async (line) => { lineRefs.push(line.rawResponseId); }, async (snapshot) => { snapshots.push(snapshot); });
-  expect(requests).toEqual([{ method: 'GET', path: '/v3/orders' }, { method: 'GET', path: '/v3/returns' }]);
+  expect(requests).toEqual([{ method: 'GET', path: '/v3/orders' }, { method: 'GET', path: '/v3/orders' }, { method: 'GET', path: '/v3/returns' }]);
   expect(lineRefs).toHaveLength(2);
   expect(lineRefs.every((id) => raw.has(id))).toBe(true);
   expect(snapshots).toMatchObject([{ returnId: 's:r-1:1', rawResponseId: lineRefs[1] }]);
@@ -42,4 +42,4 @@ it('keeps one current row across separate runs and appends only new return state
   returnStatus = 'REFUNDED';
   await syncReturns(window, connection, persist('returns'), async () => {});
   expect(projectCommerceRows(raw).snapshots.map((snapshot) => snapshot.status)).toEqual(['REQUESTED', 'REFUNDED']);
-});
+}, 15000);

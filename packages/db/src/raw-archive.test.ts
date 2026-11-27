@@ -1,0 +1,19 @@
+import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {describe,it,expect} from 'vitest';
+import {writeArchive,readArchive,archiveCutoff,deleteArchivedBatch} from './raw-archive.js';
+const row={id:'9007199254740993',tenant_id:'t',store_id:'s',resource:'orders',external_id:'e',payload:{name:'中文',amount:0},http_status:200,correlation_id:'c',received_at:'2025-01-01T00:00:00.000Z'};
+describe('verified raw archive',()=>{
+ it('roundtrips full source data and rejects damaged files',async()=>{const dir=await mkdtemp(join(tmpdir(),'raw-archive-'));try{const path=await writeArchive(dir,[row]);expect(await readArchive(path)).toEqual([row]);const bytes=await readFile(path);await writeFile(path,bytes.subarray(0,20));await expect(readArchive(path)).rejects.toThrow();}finally{await rm(dir,{recursive:true,force:true});}});
+ it('enforces retention floors and protects important history',()=>{expect(archiveCutoff('orders',new Date('2026-11-18Z'),90).toISOString()).toBe('2026-08-20T00:00:00.000Z');expect(()=>archiveCutoff('orders',new Date(),1)).toThrow();expect(()=>archiveCutoff('item-report',new Date(),90)).toThrow();expect(()=>archiveCutoff('returns',new Date(),90)).toThrow();});
+ it('never deletes if source changed or normalized coverage fails',async()=>{let deleted=false,rolledBack=false;const c:any={beginTransaction:async()=>{},rollback:async()=>{rolledBack=true;},commit:async()=>{},release:()=>{},query:async(sql:string)=>{if(sql.startsWith('SELECT'))return [[{...row,payload:{changed:true}}]];deleted=true;return [{affectedRows:1}];}};await expect(deleteArchivedBatch({getConnection:async()=>c},[row],async()=>true,'operator','backup')).rejects.toThrow(/changed/);expect(deleted).toBe(false);expect(rolledBack).toBe(true);c.query=async(sql:string)=>{if(sql.startsWith('SELECT'))return [[row]];deleted=true;return [{affectedRows:1}];};await expect(deleteArchivedBatch({getConnection:async()=>c},[row],async()=>false,'operator','backup')).rejects.toThrow(/coverage/);expect(deleted).toBe(false);});
+});
+
+import {verifyArchivedCoverage} from './raw-archive-coverage.js';
+import {normalizeItemReport} from './normalization/item-report.js';
+describe('archive coverage gate',()=>{
+ it('blocks unsupported resources and metadata-only reports',async()=>{const db={query:async()=>{throw Error('should not query');}};expect(await verifyArchivedCoverage(db,row)).toBe(false);expect(await verifyArchivedCoverage(db,{...row,resource:'item-report'})).toBe(false);});
+ it('compares all report fields and refuses missing normalized values',async()=>{const source={...row,resource:'item-report',payload:{requestId:'request',rows:[{SKU:'A',Price:'1.00','Custom Field':'original'}]}};const expected=normalizeItemReport(source.payload.rows,{tenantId:'t',storeId:'s',requestId:'request',sourceId:'e',capturedAt:new Date(row.received_at)});let missing=false;const db={query:async(sql:string)=>{if(sql.includes('item_report_runs'))return [[expected.run]];if(sql.includes('item_report_snapshots'))return [expected.snapshots];return [missing?expected.fields.slice(1):expected.fields];}};expect(await verifyArchivedCoverage(db,source)).toBe(true);missing=true;expect(await verifyArchivedCoverage(db,source)).toBe(false);});
+ it('commits bounded deletes with an audit only after coverage passes',async()=>{const calls:string[]=[];const c={beginTransaction:async()=>{},rollback:async()=>{},commit:async()=>{calls.push('commit');},release:()=>{},query:async(sql:string)=>{calls.push(sql);return sql.startsWith('SELECT')?[[row]]:[{affectedRows:1}];}};await deleteArchivedBatch({getConnection:async()=>c},[row],async()=>true,'operator','backup');expect(calls.some(x=>x.startsWith('DELETE'))).toBe(true);expect(calls.some(x=>x.includes('audit_events'))).toBe(true);expect(calls.at(-1)).toBe('commit');});
+});

@@ -1,0 +1,5 @@
+import {createDb} from '../packages/db/src/db.js';
+import {mysqlConnectionLoader} from '../apps/worker/src/queue.js';
+import {syncWfsFeePreviewToDatabase} from '../apps/worker/src/jobs/syncWfsFeePreview.js';
+const tenantId='default',storeId='10001133528',shipmentIds=['4480592WFB','3935141WFB'];
+try{const connection=await mysqlConnectionLoader({tenantId,storeId,resource:'wfs-inbound-preview',window:{from:'',to:''}});const result=await syncWfsFeePreviewToDatabase({tenantId,storeId,shipmentIds},connection);console.log(JSON.stringify({result}));const {pool}=createDb();const [rows]=await pool.query('SELECT r.shipment_id,r.status,o.ship_node,o.total_net_transfer_charge,o.currency,i.sku,i.item_quantity,i.net_transfer_charge FROM wfs_fee_preview_runs r LEFT JOIN wfs_fee_preview_options o ON o.run_id=r.id LEFT JOIN wfs_fee_preview_items i ON i.option_id=o.id WHERE r.tenant_id=? AND r.store_id=? AND r.shipment_id IN (?,?)',[tenantId,storeId,...shipmentIds]);console.log(JSON.stringify({saved:rows}));}catch(e){console.error(e instanceof Error?e.message:String(e));process.exitCode=1;}process.exit(process.exitCode??0);

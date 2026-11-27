@@ -2,7 +2,15 @@ import { expect, it } from 'vitest';
 import type { Queue } from 'bullmq';
 import { createApp } from '../../api/src/app.js';
 import { projectCommerceRows, type RawCommerceRow } from '../../api/src/routes/commerce-source.js';
-import { enqueueSync, processSyncRequest, type SyncRequest } from './queue.js';
+import { defaultSyncQueueName, enqueueSync, processSyncRequest, reportsSyncQueueName, syncQueueNameForResource, type SyncRequest } from './queue.js';
+
+it('routes asynchronous Walmart reports to their dedicated queue', () => {
+  expect(reportsSyncQueueName).toBe('walmart-sync-reports');
+  for (const resource of ['storage-fees', 'advertising-sem-performance', 'advertising-sem-search-terms', 'item-report']) {
+    expect(syncQueueNameForResource(resource)).toBe(reportsSyncQueueName);
+  }
+  expect(syncQueueNameForResource('orders')).toBe(defaultSyncQueueName);
+});
 
 it('serves raw commerce pages after queued dispatch through the mounted API', async () => {
   const pending: SyncRequest[] = [];

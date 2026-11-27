@@ -1,0 +1,21 @@
+import {it,expect} from 'vitest';
+import ExcelJS from 'exceljs';
+import {profitWorkbook} from './profit-export.js';
+it('exports the canonical post-return profit, all order rows, settings and cross-month reconciliation',async()=>{
+ const s={revenue:100,purchase:20,freight:5,lastMile:10,commission:10,onsite:3,sem:2,its:1,profit:29,profitBeforeReturns:49,returnDeduction:20,priorOrderReturnDeduction:8,orderCount:1,incomplete:1};
+ const data={summary:s,orders:[{...s,orderNumber:'001234567890123456789',storeId:'s',orderedAt:new Date('2026-11-01T08:00:00Z'),returnDeduction:12,profit:37,missing:['采购']}],missingSkus:[{sku:'SKU',storeId:'s',itemIds:'123',missing:['采购'],orderCount:1,quantity:1,revenue:100}],products:[{storeId:"s",sku:"000123",chineseName:"工具车",quantity:2,revenue:100,profit:29,returnDeduction:20,fees:{purchase:20,freight:5,lastMile:10,commission:10,onsite:3,sem:2,its:1},missing:["采购"]}],returns:{rows:[],summary:{}}};
+ const workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await profitWorkbook('2026-11',{exchangeRate:7,semDiscount:15},data as any) as any);
+ expect(workbook.worksheets.map(s=>s.name)).toEqual(['月度利润汇总','产品利润','订单利润明细','退货扣减核对','SKU缺失费用','广告分摊核对','计算说明']);
+ const products=workbook.getWorksheet('产品利润')!;
+ expect(products.getRow(2).values).toEqual([, 's','000123','工具车',2,100,20,5,10,10,3,2,1,20,29,0.29,'采购']);
+ expect(products.getCell('O2').numFmt).toBe('0.00%');
+ const summary=workbook.getWorksheet('月度利润汇总')!;
+ const values=new Map(summary.getRows(2,summary.rowCount-1)!.map(r=>[r.getCell(1).value,r.getCell(2).value]));
+ expect(values.get('粗算毛利（已扣退货）')).toBe(29);
+ expect(values.get('跨月订单退货扣减')).toBe(8);
+ expect(values.get('汇率（人民币/美元）')).toBe(7);
+ expect(values.get('SEM减免比例')).toBe(.15);
+ const row=workbook.getWorksheet('订单利润明细')!.getRow(2);
+ expect(row.getCell(2).value).toBe('001234567890123456789');
+ expect(row.values).toContain(37);expect(row.values).toContain('采购');
+});

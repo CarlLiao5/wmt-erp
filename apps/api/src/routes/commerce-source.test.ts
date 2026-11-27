@@ -1,5 +1,48 @@
 import { expect, it } from 'vitest';
-import { projectCommerceRows } from './commerce-source.js';
+import { aggregateOrderSalesBySku, normalizeReturnReason, pacificDateRangeBounds, projectCommerceRows, projectOrderChartRows } from './commerce-source.js';
+
+it('aggregates non-cancelled order units by sku without treating missing quantities as zero', () => {
+  expect(aggregateOrderSalesBySku([
+    { orderId: 'o1', storeId: 's', sku: 'A', itemId: '100', quantity: 2, amount: 12, status: 'Acknowledged' },
+    { orderId: 'o2', storeId: 's', sku: 'A', itemId: '100', quantity: 3, amount: 18, status: 'Shipped' },
+    { orderId: 'o3', storeId: 's', sku: 'A', itemId: '100', quantity: 100, amount: 600, status: 'Cancelled' },
+    { orderId: 'o4', storeId: 's', sku: 'B', itemId: '200', quantity: null, amount: null, status: 'Created' },
+  ])).toEqual([
+    { storeId: 's', sku: 'A', itemId: '100', units: 5, orders: 2, revenue: 30 },
+    { storeId: 's', sku: 'B', itemId: '200', units: null, orders: 1, revenue: null },
+  ]);
+});
+
+it('normalizes return reason variants to one display category', () => {
+  expect(normalizeReturnReason('NO_LONGER_WANTED', 'No Longer Wanted')).toEqual({ key: 'NO_LONGER_WANTED', label: 'No Longer Wanted' });
+  expect(normalizeReturnReason(undefined, 'NO_LONGER_WANTED')).toEqual({ key: 'NO_LONGER_WANTED', label: 'No Longer Wanted' });
+  expect(normalizeReturnReason('DEFECTIVE', 'Defective/Broken')).toEqual({ key: 'DEFECTIVE', label: 'Defective/Broken' });
+});
+
+it('builds Pacific calendar-day UTC bounds with the correct daylight-saving offsets', () => {
+  expect(pacificDateRangeBounds('2026-03-08', '2026-03-08').map((date) => date.toISOString())).toEqual([
+    '2026-03-08T08:00:00.000Z',
+    '2026-03-09T07:00:00.000Z',
+  ]);
+  expect(pacificDateRangeBounds('2026-11-01', '2026-11-01').map((date) => date.toISOString())).toEqual([
+    '2026-11-01T07:00:00.000Z',
+    '2026-11-02T08:00:00.000Z',
+  ]);
+});
+
+it('projects combined order chart rows into Pacific, China, and region series', () => {
+  const charts = projectOrderChartRows([
+    { kind: 'daily', bucket: '2026-11-03', count: 4 },
+    { kind: 'pacific_hour', bucket: 18, count: 3 },
+    { kind: 'china_hour', bucket: 2, count: 3 },
+    { kind: 'region', bucket: 'California', count: 2 },
+  ]);
+  expect(charts.dailyOrderTrend).toEqual([{ date: '2026-11-03', count: 4 }]);
+  expect(charts.hourlyOrderTrend).toHaveLength(24);
+  expect(charts.hourlyOrderTrend[18]).toEqual({ hour: 18, count: 3 });
+  expect(charts.chinaHourlyOrderTrend[2]).toEqual({ hour: 2, count: 3 });
+  expect(charts.regionDistribution).toEqual([{ region: 'California', count: 2 }]);
+});
 
 it('projects replayed raw pages into one current line and append-only status history', () => {
   const rows = [

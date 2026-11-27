@@ -3,6 +3,21 @@ dist/
 .env
 .env.*
 !.env.example
+ops/lingxing-etl/database.env
+ops/lingxing-etl/mcp.env
+ops/lingxing-etl/venv/
 .turbo/
 coverage/
 *.log
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Local databases, exports, generated release bundles, and validation output
+backups/
+artifacts/
+dist-release/
+screenlog.*
+
+# Local raw archives contain upstream business data
+.local/

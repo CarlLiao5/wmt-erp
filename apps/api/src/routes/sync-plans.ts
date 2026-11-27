@@ -3,10 +3,11 @@ import { and, createDb, eq, inArray, syncJobs, syncPlans, syncWindows } from '@w
 import { randomUUID } from 'node:crypto';
 import { requestSession } from './auth.js';
 import { planInitialWindows } from './initialWindowPlanner.js';
-import { createSyncQueue, enqueueSync, syncQueueNameForResource } from '../../../worker/src/queue.js';
+import { createSyncQueue, enqueueSync, reportQueueNameForStore, syncQueueNameForResource } from '../../../worker/src/queue.js';
 import { INCREMENTAL_SYNC_POLICIES, incrementalSyncPolicy, nextScheduledRunAt } from '@walmart-erp/domain';
 
-const RESOURCES = new Set(['orders', 'returns', 'inventory', 'storage-fees', 'pricing', 'item-report', 'head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-advertising', 'lingxing-head-freight-costs', 'advertising', 'advertising-onsite', 'advertising-sem', 'advertising-sem-items', 'advertising-sem-performance', 'advertising-sem-search-terms', 'performance', 'weather']);
+const RESOURCES = new Set(['orders', 'returns', 'inventory', 'wfs-inbound-preview', 'storage-fees', 'pricing', 'item-report', 'inventory-recon', 'head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-advertising', 'lingxing-head-freight-costs', 'advertising', 'advertising-onsite', 'advertising-sem', 'advertising-sem-items', 'advertising-sem-performance', 'advertising-sem-search-terms', 'performance', 'weather']);
+const TENANT_ONLY_INCREMENTAL_RESOURCES = new Set(['head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-advertising', 'lingxing-head-freight-costs', 'weather']);
 
 export interface SyncPlanSession { tenantId: string; userId?: string; role: 'admin' | 'member'; storeIds?: Set<string>; skus?: Set<string>; }
 export interface SyncPlanCreateInput { tenantId: string; storeId: string; resources: string[]; mode: 'initial' | 'incremental'; requestedFrom?: string; requestedTo?: string; }
@@ -32,14 +33,14 @@ export interface SyncPlanStore {
   get(id: string, tenantId: string, storeIds?: string[]): Promise<SyncPlanView | undefined>;
   listIncremental?(tenantId: string, storeIds?: string[]): Promise<IncrementalPlanView[]>;
   setStoreIncrementalEnabled?(storeId: string, tenantId: string, enabled: boolean, storeIds?: string[]): Promise<{ enabled: boolean; planCount: number } | undefined>;
-  setTenantIncrementalEnabled?(tenantId: string, enabled: boolean): Promise<{ enabled: boolean; planCount: number }>;
+  setTenantIncrementalEnabled?(tenantId: string, enabled: boolean, resource?: string): Promise<{ enabled: boolean; planCount: number }>;
 }
 export interface SyncPlansRouterOptions { store: SyncPlanStore; session?: (req: Request) => Promise<SyncPlanSession | undefined>; }
 
 export function mysqlSyncPlanStore(): SyncPlanStore {
   const syncQueues = new Map<string, ReturnType<typeof createSyncQueue>>();
-  const queueForResource = (resource: string) => {
-    const queueName = syncQueueNameForResource(resource);
+  const queueForResource = (resource: string, storeId?: string) => {
+    const queueName = syncQueueNameForResource(resource) === 'walmart-sync-reports' && storeId ? reportQueueNameForStore(storeId) : syncQueueNameForResource(resource);
     let queue = syncQueues.get(queueName);
     if (!queue) { queue = createSyncQueue(undefined, queueName); syncQueues.set(queueName, queue); }
     return queue.queue;
@@ -47,7 +48,7 @@ export function mysqlSyncPlanStore(): SyncPlanStore {
   return {
     async create(input) {
       if (input.mode === 'incremental') {
-        const unsupported = input.resources.filter((resource) => !incrementalSyncPolicy(resource));
+        const unsupported = input.resources.filter((resource) => !incrementalSyncPolicy(resource) || (input.storeId !== '__tenant__' && TENANT_ONLY_INCREMENTAL_RESOURCES.has(resource)));
         if (unsupported.length) throw new Error(`Incremental sync is not supported for: ${unsupported.join(', ')}`);
       }
       const { db, pool } = createDb();
@@ -93,7 +94,7 @@ export function mysqlSyncPlanStore(): SyncPlanStore {
                   window: { from: planned.windowFrom.toISOString(), to: planned.windowTo.toISOString() },
                   batchId: window.batchId,
                   syncWindowId: window.id,
-                }, queueForResource(resource));
+                }, queueForResource(resource, input.storeId));
               }
             }
             result.push(row);
@@ -113,20 +114,22 @@ export function mysqlSyncPlanStore(): SyncPlanStore {
         return { id: plan.id, status: plan.status, resources };
       } finally { await pool.end(); }
     },
-    async setTenantIncrementalEnabled(tenantId, enabled) {
+    async setTenantIncrementalEnabled(tenantId, enabled, requestedResource?: string) {
       const { pool } = createDb();
-      const resources = ['head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-advertising', 'lingxing-head-freight-costs'] as const;
+      const resources = ['head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-advertising', 'lingxing-head-freight-costs', 'weather'] as const;
+      const selected = requestedResource ? resources.filter((resource) => resource === requestedResource) : [...resources];
+      if (!selected.length) return { enabled, planCount: 0 };
       try {
         const now = new Date();
         if (enabled) {
-          for (const resource of resources) {
+          for (const resource of selected) {
             const policy = INCREMENTAL_SYNC_POLICIES[resource];
           await pool.query(`INSERT INTO sync_plans (id, tenant_id, store_id, resource, mode, status, interval_minutes, overlap_days, next_run_at, enabled, created_at, updated_at) VALUES (UUID(), ?, '__tenant__', ?, 'incremental', 'planned', ?, ?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE interval_minutes=VALUES(interval_minutes), overlap_days=VALUES(overlap_days), enabled=1, next_run_at=IF(next_run_at IS NULL, VALUES(next_run_at), next_run_at), updated_at=VALUES(updated_at)`, [tenantId, resource, policy.intervalMinutes, policy.overlapDays, nextScheduledRunAt(resource, now), now, now]);
           }
         } else {
-          await pool.query(`UPDATE sync_plans SET enabled=0, next_run_at=NULL, updated_at=? WHERE tenant_id=? AND store_id='__tenant__' AND mode='incremental' AND resource IN ('head-freight','smart-sheet-allsku2026','freight-tracking','lingxing-advertising','lingxing-head-freight-costs')`, [now, tenantId]);
+          await pool.query(`UPDATE sync_plans SET enabled=0, next_run_at=NULL, updated_at=? WHERE tenant_id=? AND store_id='__tenant__' AND mode='incremental' AND resource IN (${selected.map(() => '?').join(',')})`, [now, tenantId, ...selected]);
         }
-        const [rows] = await pool.query(`SELECT COUNT(*) AS planCount FROM sync_plans WHERE tenant_id=? AND store_id='__tenant__' AND mode='incremental' AND resource IN ('head-freight','smart-sheet-allsku2026','freight-tracking','lingxing-advertising','lingxing-head-freight-costs')`, [tenantId]);
+        const [rows] = await pool.query(`SELECT COUNT(*) AS planCount FROM sync_plans WHERE tenant_id=? AND store_id='__tenant__' AND mode='incremental' AND resource IN (${selected.map(() => '?').join(',')}) AND enabled=1`, [tenantId, ...selected]);
         return { enabled, planCount: Number((rows as Array<{ planCount: number }>)[0]?.planCount ?? 0) };
       } finally { await pool.end(); }
     },
@@ -147,6 +150,7 @@ export function mysqlSyncPlanStore(): SyncPlanStore {
             WHERE p.tenant_id = ? AND p.mode = 'incremental'
               AND NOT (p.store_id = '__tenant__' AND p.resource = 'item-report')
               AND (p.store_id = '__tenant__' OR p.resource NOT IN ('head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-head-freight-costs'))${storeFilter}
+              AND NOT (p.store_id <> '__tenant__' AND p.resource IN ('lingxing-advertising', 'weather'))
             GROUP BY p.id, p.store_id, s.name, p.resource, p.status, p.enabled,
                      p.interval_minutes, p.overlap_days, p.next_run_at
             ORDER BY p.store_id, p.resource`,
@@ -206,7 +210,7 @@ export function mysqlSyncPlanStore(): SyncPlanStore {
 
         const now = new Date();
         if (enabled) {
-          for (const [resource, policy] of Object.entries(INCREMENTAL_SYNC_POLICIES).filter(([resource]) => !['head-freight', 'smart-sheet-allsku2026', 'freight-tracking', 'lingxing-head-freight-costs'].includes(resource))) {
+          for (const [resource, policy] of Object.entries(INCREMENTAL_SYNC_POLICIES).filter(([resource]) => !TENANT_ONLY_INCREMENTAL_RESOURCES.has(resource))) {
             await connection.query(
               `INSERT INTO sync_plans
                 (id, tenant_id, store_id, resource, mode, status, interval_minutes, overlap_days, next_run_at, enabled, created_at, updated_at)
@@ -281,7 +285,7 @@ export function syncPlansRouter(options: SyncPlansRouterOptions): Router {
       const resources = Array.isArray(body.resources) ? [...new Set(body.resources.filter((resource): resource is string => typeof resource === 'string' && RESOURCES.has(resource)))] : [];
       if (!body.storeId || !resources.length || !['initial', 'incremental'].includes(body.mode ?? '')) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: 'storeId, resources, and mode are required' } });
       if (body.mode === 'incremental') {
-        const unsupported = resources.filter((resource) => !incrementalSyncPolicy(resource));
+        const unsupported = resources.filter((resource) => !incrementalSyncPolicy(resource) || (body.storeId !== '__tenant__' && TENANT_ONLY_INCREMENTAL_RESOURCES.has(resource)));
         if (unsupported.length) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: `Incremental sync is not supported for: ${unsupported.join(', ')}` } });
       }
       if (current.role !== 'admin' && !current.storeIds?.has(body.storeId)) return res.status(403).json({ requestId: res.locals.requestId, data: null, error: { message: 'Store access required' } });
@@ -316,8 +320,10 @@ export function syncPlansRouter(options: SyncPlansRouterOptions): Router {
       const current = (await session(req)) as SyncPlanSession | undefined;
       if (!current) return res.status(401).json({ requestId: res.locals.requestId, data: null, error: { message: 'Authentication required' } });
       if (current.role !== 'admin') return res.status(403).json({ requestId: res.locals.requestId, data: null, error: { message: 'Administrator access required' } });
-      if (typeof (req.body as { enabled?: unknown }).enabled !== 'boolean' || !options.store.setTenantIncrementalEnabled) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: 'enabled must be a boolean' } });
-      return res.json({ requestId: res.locals.requestId, data: await options.store.setTenantIncrementalEnabled(current.tenantId, req.body.enabled), error: null });
+      const body = req.body as { enabled?: unknown; resource?: unknown };
+      if (typeof body.enabled !== 'boolean' || !options.store.setTenantIncrementalEnabled) return res.status(400).json({ requestId: res.locals.requestId, data: null, error: { message: 'enabled must be a boolean' } });
+      if (body.resource) return res.json({ requestId: res.locals.requestId, data: await options.store.setTenantIncrementalEnabled(current.tenantId, body.enabled, String(body.resource)), error: null });
+      return res.json({ requestId: res.locals.requestId, data: await options.store.setTenantIncrementalEnabled(current.tenantId, body.enabled), error: null });
     } catch (error) { return next(error); }
   });
   return router;

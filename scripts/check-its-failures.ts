@@ -1,0 +1,1 @@
+import {createDb} from '../packages/db/src/db.js';const {pool}=createDb();const [rows]=await pool.query("SELECT store_id,shipment_id,last_error FROM wfs_fee_preview_runs WHERE tenant_id='default' AND status='failed' AND last_attempt_at >= '2026-11-18 07:07:00' ORDER BY last_attempt_at DESC LIMIT 8");console.log(JSON.stringify(rows));process.exit();

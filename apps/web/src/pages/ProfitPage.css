@@ -1,0 +1,93 @@
+.profit-page{min-width:0}.profit-page .panel{margin-bottom:20px}.profit-controls{display:flex;gap:24px;flex-wrap:wrap;align-items:end}.profit-controls form{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.profit-controls label{display:grid;gap:8px;font-size:13px;color:#475569}.profit-controls input{min-height:42px;width:180px;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px}.profit-controls>p{flex-basis:100%;margin:0}.profit-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.profit-metrics strong{display:block;font-size:28px;letter-spacing:-.7px;font-variant-numeric:tabular-nums;color:#0f172a}.profit-metrics small{display:block;margin-top:12px;color:#64748b}.profit-costs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin-top:20px}.profit-costs span,.profit-costs strong{display:block}.profit-costs span{font-size:13px;color:#64748b}.profit-costs strong{margin:8px 0;font-size:19px;font-variant-numeric:tabular-nums}.profit-costs progress{width:100%;height:6px;accent-color:#2563eb}.profit-list-head,.profit-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px}.profit-list-head input{padding:10px;border:1px solid #cbd5e1;border-radius:8px}.profit-table{overflow-x:auto;margin:16px 0}.profit-table table{min-width:1300px}.profit-table td{font-variant-numeric:tabular-nums;white-space:nowrap}.profit-warning{color:#9a6700}.profit-empty{text-align:center;padding:64px;color:#64748b}.profit-page details p{font-size:13px;line-height:1.8;color:#64748b}.profit-page summary{cursor:pointer}.profit-page button{min-height:42px}@media(max-width:1000px){.profit-metrics,.profit-costs{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.profit-metrics,.profit-costs{grid-template-columns:1fr}.profit-controls form,.profit-controls label,.profit-controls input{width:100%}.profit-list-head{align-items:stretch;flex-direction:column}.profit-metrics strong{font-size:25px}}
+.profit-return-note{line-height:1.8;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px}.profit-return-panel .profit-costs strong{font-size:22px}.profit-return-panel .eyebrow{margin-bottom:8px}.profit-return-panel .profit-table td:last-child{max-width:260px;white-space:normal}
+
+.profit-run-status { margin: 0 0 12px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; color: #475569; font-size: 13px; }
+.profit-view-switch{display:flex;gap:6px;flex-wrap:wrap}
+.profit-view-switch button[aria-pressed=true]{background:#eaf2ff;color:#174ea6;border-color:#b8cdf1}
+.profit-product-table table{min-width:760px}
+.profit-product{display:flex;align-items:center;gap:12px}
+.profit-product strong{display:block;max-width:280px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.profit-product small{display:block;color:#64748b;margin-top:4px}
+.profit-product-image{display:block;width:42px;height:42px;background:#f1f5f9;border-radius:7px;overflow:hidden;flex:none}
+.profit-product-image img{width:100%;height:100%;object-fit:contain}
+.profit-negative{color:#b42318}
+button.profit-product{border:0;background:transparent;text-align:left;color:inherit;padding:4px;border-radius:6px;cursor:pointer}
+button.profit-product:hover{background:#edf4ff}
+.profit-fee-dialog{width:min(640px,calc(100% - 28px));max-height:85vh;overflow:auto;padding:24px;border:1px solid #e2e8f0;border-radius:14px;color:#0f172a}
+.profit-fee-dialog::backdrop{background:#0f172a66}
+.profit-fee-dialog header{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.profit-fee-dialog header h2{margin:0;font-size:20px}
+.profit-fee-dialog header p{color:#64748b;white-space:normal;overflow-wrap:anywhere}
+.profit-fee-dialog .data-table :is(td,th):not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.profit-fee-total strong{margin-left:8px;font-size:21px}
+
+.profit-page { --profit-border:#dde6ee; --profit-ink:#152b3f; --profit-accent:#126a60; }
+.profit-page .profit-heading { display:flex; align-items:start; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.profit-heading h1 { margin:0 0 5px; }
+.profit-heading p { margin:0; }
+.profit-currency { color:#456274; font-size:12px; font-weight:700; border:1px solid var(--profit-border); border-radius:6px; padding:5px 8px; }
+.profit-page .profit-controls { display:block; padding:16px 20px; }
+.profit-controls [data-calculate] { display:flex; align-items:end; justify-content:space-between; gap:12px; }
+.profit-toolbar,.profit-actions { display:flex; align-items:end; gap:8px; flex-wrap:wrap; min-width:0; }
+.profit-actions button { white-space:normal; }
+.profit-controls input { width:160px; max-width:100%; background:#fff; color:var(--profit-ink); }
+.profit-controls button[data-state=ready] { color:#126052; background:#eef7f4; }
+.profit-controls button[data-state=running],.profit-controls button[data-state=queued] { color:#18559b; background:#eef5ff; }
+.profit-controls button[data-state=failed] { color:#985c17; background:#fff6e8; }
+.profit-export { position:relative; }
+.profit-export summary { padding:10px 12px; border:1px solid var(--profit-border); border-radius:8px; color:var(--profit-ink); }
+.profit-export-actions { position:absolute; right:0; top:calc(100% + 6px); z-index:4; min-width:190px; display:grid; gap:6px; padding:8px; background:#fff; border:1px solid var(--profit-border); border-radius:10px; box-shadow:0 8px 24px #18334722; }
+.profit-settings { margin-top:14px; padding-top:12px; border-top:1px solid var(--profit-border); color:#425c70; font-size:13px; }
+.profit-settings form { margin-top:12px; }
+.profit-page .profit-run-status { margin:12px 0 0; background:#f5f8fb; }
+.profit-page > [data-status] { margin:0 0 14px; font-size:13px; color:#496477; }
+.profit-page > [data-status]:empty { display:none; }
+.profit-empty strong { color:var(--profit-ink); font-size:17px; }
+.profit-empty p { margin:8px 0 0; }
+.profit-metrics { grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,1fr)); gap:12px; }
+.profit-metrics .panel { padding:18px; }
+.profit-metrics span { font-size:13px; color:#496477; }
+.profit-metrics strong { font-size:clamp(19px,2vw,29px); overflow-wrap:anywhere; margin-top:8px; }
+.profit-metrics small { display:block; margin-top:8px; }
+.profit-metrics .profit-hero { background:#103e43; border-color:#103e43; }
+.profit-hero :is(span,small) { color:#c8e5df; }
+.profit-hero strong { color:#fff; }
+.profit-breakdown header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.profit-breakdown header :is(h2,strong) { margin:0; }
+.profit-breakdown header strong { font-size:19px; font-variant-numeric:tabular-nums; }
+.profit-breakdown .profit-costs { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 24px; margin:0; }
+.profit-costs .profit-cost-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 12px; padding:10px 0; border-bottom:1px solid #edf1f5; }
+.profit-cost-row strong { margin:0; font-size:14px; }
+.profit-cost-row progress { grid-column:1/-1; height:5px; accent-color:var(--profit-accent); }
+.profit-breakdown > p { margin:14px 0 0; font-size:13px; }
+.profit-view-switch { background:#f1f5fa; padding:4px; border-radius:10px; }
+.profit-view-switch button { border:1px solid transparent; background:transparent; min-height:34px; }
+.profit-view-switch button[aria-pressed=true] { background:#fff; color:#16445a; border-color:#d5e2eb; }
+.profit-detail [data-search] { width:min(100%,290px); }
+.profit-detail .profit-table { border:1px solid var(--profit-border); border-radius:8px; }
+.profit-detail .data-table th { background:#f4f7fa; white-space:nowrap; }
+.profit-detail .data-table tr:hover td { background:#f7fbfc; }
+.profit-fee-dialog .profit-fee-total { background:#edf6f5; border-radius:8px; padding:12px; }
+.profit-method { font-size:13px; color:#496477; }
+@media(max-width:1000px) { .profit-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:600px) {
+ .profit-page .profit-controls { padding:14px; }
+ .profit-controls :is(form,label,input) { width:auto; }
+ .profit-controls [data-calculate],.profit-toolbar { align-items:stretch; width:100%; }
+ .profit-controls [data-calculate] { flex-direction:column; }
+ .profit-toolbar > label { flex:1 1 145px; }
+ .profit-toolbar input { width:100%; }
+ .profit-actions { align-items:center; }
+ .profit-export-actions { position:static; min-width:0; box-shadow:none; margin-top:6px; }
+ .profit-metrics .panel { padding:12px; }
+ .profit-breakdown .profit-costs { grid-template-columns:1fr; }
+ .profit-fee-dialog { padding:14px; }
+}
+
+.profit-ad-reconciliation { min-width:0; }
+.profit-ad-reconciliation h2 { margin:0; }
+.profit-ad-reconciliation .table-scroll { overflow-x:auto; max-width:100%; margin:14px 0; }
+.profit-ad-reconciliation table { width:100%; border-collapse:collapse; font-size:13px; }
+.profit-ad-reconciliation :is(th,td) { padding:12px; text-align:left; border-bottom:1px solid var(--profit-border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.profit-ad-reconciliation th { background:#f5f8fb; color:#496477; }
+.profit-ad-reconciliation details { padding-top:12px; }

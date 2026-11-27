@@ -12,4 +12,11 @@ export * from './src/adapters/inventory.js';
 export * from './src/adapters/wfs.js';
 export * from './src/adapters/pricing.js';
 export * from './src/adapters/performance.js';
+export * from './src/adapters/advertising.js';
+export * from './src/adapters/sem.js';
+export * from './src/adapters/itemReport.js';
 export * from './src/adapters/reports.js';
+export * from './src/adapters/storageFees.js';
+export * from './src/adapters/brightdata.js';
+
+export * from "./src/inbound-preview.js";
