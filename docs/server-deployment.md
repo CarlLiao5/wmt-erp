@@ -44,3 +44,69 @@ curl -f http://127.0.0.1:3100/api/health
 2026-11-21 晚间因库存占用普通队列导致订单等待，将 SYNC_WORKER_CONCURRENCY 从 1 调至 2，在线调整现有 Worker，无进程重启。已核验厦门多壳 20:30 订单批次转为 active；报告/领星/评论并发不变。
 
 2026-11-21 因库存任务阻塞订单队列，将服务器 SYNC_WORKER_CONCURRENCY 调为 2。为不打断正在运行订单，当前进程通过一个额外普通队列消费者实现总并发 2（原消费者 1 + 新消费者 1），无额外调度器；下次服务重启自动回到单消费者并发 2。
+
+## 2026-11-28 发版记录：分支 `feat/ui-module-refresh`
+
+发布目录 `/opt/wmterp/releases/20261128`。包含价格促销服务端取最新与分页筛选、库存库龄双卡片、货件汇总卡与轨迹修复、广告 KPI 条、绩效达标判定等前端改动，以及 `/api/pricing` 的 SQL 改动。
+
+### 本地构建
+
+```sh
+node ops/deploy/build-runtime.cjs
+```
+
+```sh
+cd apps/web && npx vite build --base=/ERP/
+```
+
+`build-runtime.cjs` 产出 `api.mjs`、`worker.mjs`、`server.mjs`、`package.json`。前端必须带 `--base=/ERP/`，否则资源路径会指向根目录。
+
+### 服务器发版
+
+```sh
+NEW=/opt/wmterp/releases/$(date +%Y%m%d)
+cp -a /opt/wmterp/current/. $NEW/ && rm -rf $NEW/web
+tar xzf /tmp/wmterp-release.tar.gz -C $NEW
+cd $NEW && /opt/wmterp/runtime/node-v22.15.0-linux-x64/bin/npm install --omit=dev
+chown -R wmterp:wmterp $NEW
+ln -sfn $NEW /opt/wmterp/current
+systemctl restart wmterp-api wmterp-worker
+```
+
+先复制旧版本再覆盖，是为了保留 `ops/`、`scripts/`、`lingxing-*.py` 等辅助文件；`rm -rf $NEW/web` 清掉旧哈希资源再解包。切换前可先 `node --check` 两个 bundle，并确认 `node_modules` 里关键依赖存在。
+
+### Worker 停机慢
+
+`wmterp-worker` 收到 SIGTERM 后不会主动退出，每次都等满 `TimeoutStopUSec=5min` 才被 systemd 强杀。部署时表现为 `systemctl restart` 长时间不返回、`is-active` 显示 `deactivating`。这是老进程行为，不代表新版本有问题——新 Worker 确实会在超时后正常启动。
+
+需要立即完成发版时：
+
+```sh
+systemctl kill -s SIGKILL wmterp-worker; systemctl stop wmterp-worker
+```
+
+代价是中断正在执行的队列任务。根治办法是把 `wmterp-worker.service` 的 `TimeoutStopSec` 调小到 30 秒。
+
+### 回滚
+
+```sh
+systemctl stop wmterp-worker
+ln -sfn /opt/wmterp/releases/<上一版> /opt/wmterp/current
+systemctl restart wmterp-api wmterp-worker
+```
+
+### 验证
+
+```sh
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3100/api/health
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/ERP/
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1/ERP/api/health
+```
+
+三项都应返回 200。重启后 API 需要几秒才就绪，过早请求会得到 `000`。
+
+### 注意
+
+- 本次发布的分支 `feat/ui-module-refresh` 当时尚未合并（PR #1），生产运行的是未合并代码
+- 服务器凭据放在本机 `/Users/carl/Documents/wmterp/SSH.ENV`，不入库
+
