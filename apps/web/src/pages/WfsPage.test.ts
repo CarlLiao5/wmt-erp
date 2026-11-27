@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderWfsFeePreviewMarkup, wfsDeliveryAgeLabel } from './WfsPage.js';
+import { renderWfsFeePreviewMarkup, wfsDeliveryAgeLabel, renderWfsTrackingMarkup } from './WfsPage.js';
 
 describe('WFS actual delivery age', () => {
   it('counts whole calendar days since delivery', () => {
@@ -42,6 +42,16 @@ describe('WFS fee preview details', () => {
     expect(html).toContain('暂无数据');
     expect(html).not.toContain('0 USD');
   });
+});
+
+it('renders logistics tracking without a separate head-freight information section', () => {
+  const markup = renderWfsTrackingMarkup({
+    inboundNumber: 'IN-1', brand: 'forwarder', currentStatusText: '运输中',
+    events: [{ eventTimeText: '2026-11-20', info: '已出库', eventCode: 'DEPARTED' }],
+  });
+  expect(markup).toContain('物流轨迹');
+  expect(markup).toContain('已出库');
+  expect(markup).not.toContain('头程发货信息');
 });
 
 it('separates warehouse, quote amount and product fee details',()=>{

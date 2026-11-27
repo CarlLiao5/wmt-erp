@@ -1,0 +1,88 @@
+/* Orders page. Shared tokens come from theme.css. The filter bar grid lives in styles.css; only the action buttons are restyled here. */
+.order-filter-actions { display: flex; gap: 8px; }
+.order-filter-actions button { height: 40px; padding: 0 16px; font-size: 13px; font-weight: 600; border-radius: var(--r-control); cursor: pointer; }
+.order-filter-actions button:not(.primary) { background: var(--surface); color: var(--ink-2); border: 1px solid var(--line-strong); }
+.order-filter-actions button:not(.primary):hover { background: var(--paper); border-color: var(--muted); }
+
+
+.chart h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
+.order-view-toggle { border-color: var(--line); border-radius: var(--r-control); background: var(--paper); }
+.order-view-toggle button[aria-selected="true"] { color: var(--accent-strong); }
+
+.result-caption { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.order-results table { margin-top: 2px; }
+.order-results th.num, .order-results td.num { text-align: right; }
+.order-results td.time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.sales-summary article { background: var(--surface); border-color: var(--line); border-radius: var(--r-control); }
+.sales-summary strong { color: var(--ink); }
+
+@media (max-width: 700px) {
+  .order-filter-actions { grid-column: 1 / -1; }
+  .order-filter-actions button { flex: 1; height: 44px; }
+}
+
+/* Sales statistics */
+.sales-summary { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+.sales-product { display: flex; align-items: center; gap: 12px; }
+.sales-product .item-thumb-cell { width: auto; flex: 0 0 auto; }
+.sales-product > div:last-child { display: grid; gap: 2px; min-width: 0; }
+.sales-product-name { color: var(--ink-2); font-size: 13px; }
+.sales-product-id { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sales-table td { vertical-align: middle; }
+.sales-revenue { white-space: nowrap; }
+.sales-revenue-value { display: block; font-weight: 600; }
+.sales-share { display: inline-block; vertical-align: middle; width: 88px; height: 6px; margin-right: 8px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.sales-share i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.sales-share-text { color: var(--muted); font-size: 12px; }
+@media (max-width: 900px) { .sales-summary { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .sales-share { display: none; } }
+
+
+/* 24-hour chart: 24 equal columns so every hour fits, values live in the tooltip, the legend sits beside the title. */
+.chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 20px; flex-wrap: wrap; margin-bottom: 14px; }
+.chart-head h3 { margin: 0; }
+.chart-head .hour-legend { margin: 0; gap: 16px; }
+.order-charts .grouped-bars { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; overflow: visible; }
+.order-charts .grouped-bars .bar-group { min-width: 0; gap: 2px; }
+.order-charts .grouped-bars .bar-group > .bar-item { flex: 1 1 0; min-width: 0; max-width: 14px; }
+.order-charts .grouped-bars .bar-group > .bar-item i { width: 100%; }
+.order-charts .grouped-bars .bar-value { display: none; }
+.order-charts .grouped-bars .bar-group > span { font-size: 10px; }
+.legend-dot.china { background: var(--accent); }
+
+/* The region card follows its content instead of holding a fixed height. */
+.order-charts > .chart.chart:not(.chart-wide) { min-height: 0; max-height: none; overflow: visible; }
+
+/* Second chart row: both cards share one height. Few regions get roomy rows so the card is not left half empty. */
+.order-charts > .chart-wide:nth-child(2), .order-charts > .chart-region { align-self: stretch; }
+.order-charts .grouped-bars { height: 230px; }
+.chart-region { display: flex; flex-direction: column; }
+.region-list { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.region-list .chart-bar { flex: 0 0 auto; }
+.region-list.roomy { justify-content: space-evenly; }
+.order-charts .chart-region .region-list.roomy .chart-bar { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 10px; align-items: center; row-gap: 6px; height: auto; padding: 4px 0; font-size: 13px; }
+.region-list.roomy .chart-bar span { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.region-list.roomy .chart-bar b { font-size: 15px; text-align: right; }
+.region-list.roomy .chart-bar i { grid-column: 1 / -1; grid-row: 2; height: 8px; }
+
+/* Filter bar: three inputs and the status select share the row with one compact date field and the actions. */
+@media (min-width: 1101px) {
+  .order-filters { grid-template-columns: repeat(3, minmax(96px, 1fr)) minmax(100px, .8fr) max-content auto; align-items: center; }
+  .order-filters > .date-range-picker { grid-column: auto; width: auto; }
+  .order-filter-actions { justify-self: end; }
+}
+@media (max-width: 1100px) {
+  .order-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .order-filters > .date-range-picker { grid-column: 1 / 4; }
+  .order-filter-actions { grid-column: 4; justify-self: end; }
+}
+
+/* The date field sits mid-row on this page, so its calendar opens from the right edge instead of running off screen. */
+.order-filters > .date-range-picker .date-range-popover { left: auto; right: 0; }
+@media (max-width: 1100px) { .order-filters > .date-range-picker .date-range-popover { left: 0; right: auto; } }
+
+@media (max-width: 700px) {
+  .order-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .order-filters > .date-range-picker { grid-column: 1 / -1; }
+  .order-filter-actions { grid-column: 1 / -1; justify-self: stretch; }
+}

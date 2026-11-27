@@ -1,0 +1,104 @@
+/* WFS shipments page. Shared tokens come from theme.css. */
+
+.wfs-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 18px 0 16px; }
+.wfs-metrics[hidden] { display: none; }
+.wfs-metrics article { min-width: 0; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); }
+.wfs-metrics span { display: block; color: var(--muted); font-size: 12px; }
+.wfs-metrics strong { display: block; margin-top: 6px; color: var(--ink); font-size: 24px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.wfs-metrics .is-danger { border-color: var(--danger-line); box-shadow: inset 3px 0 0 var(--danger); }
+.wfs-metrics .is-danger strong { color: var(--danger); }
+@media (max-width: 760px) { .wfs-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.wfs-anomaly-filter { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; padding: 12px 16px; background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: var(--r-panel); color: var(--danger); font-size: 13px; }
+.wfs-anomaly-filter button { height: 36px; padding: 0 12px; }
+@media (max-width: 600px) { .wfs-anomaly-filter { flex-direction: column; align-items: stretch; } .wfs-anomaly-filter button { width: 100%; } }
+
+.wfs-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-control); }
+.wfs-filters input[name="query"] { flex: 1 1 240px; min-width: 0; }
+.wfs-filters select { width: 150px; }
+.wfs-filters button { height: 38px; padding: 0 16px; font-size: 13px; font-weight: 600; }
+@media (max-width: 640px) { .wfs-filters { align-items: stretch; } .wfs-filters input, .wfs-filters select { width: 100%; } .wfs-filters button { flex: 1; height: 44px; } }
+
+.wfs-table-head { display: grid; grid-template-columns: 22px 1.2fr 1.7fr 1fr .8fr .8fr 1.2fr; align-items: center; gap: 10px; padding: 10px 16px; color: var(--muted); font-size: 12px; font-weight: 600; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-panel); margin-bottom: 8px; }
+.wfs-table-head span:last-child { text-align: right; }
+
+.wfs-list { display: grid; gap: 8px; }
+.wfs-card { border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--surface); overflow: hidden; transition: border-color .12s ease, box-shadow .12s ease; }
+.wfs-card:hover { border-color: var(--line-strong); }
+.wfs-card.expanded { box-shadow: var(--shadow-panel); }
+
+.wfs-card-head { width: 100%; display: grid; grid-template-columns: 22px 1.2fr 1.7fr 1fr .8fr .8fr 1.2fr; align-items: center; gap: 10px; padding: 14px 16px; border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; transition: background .12s ease; }
+.wfs-card-head:hover { background: var(--paper); }
+.wfs-card-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.wfs-chevron { color: var(--accent); font-size: 16px; }
+
+.wfs-card-date { display: grid; gap: 4px; color: var(--muted); font-size: 12px; text-align: right; }
+.wfs-card-date time { font: inherit; font-weight: 500; color: var(--ink-2); }
+.wfs-card-date small { color: var(--accent-strong); font-size: 11px; font-weight: 600; }
+
+.wfs-quantity-mismatch { color: var(--danger); font-weight: 700; }
+.wfs-card-mismatch { border-color: var(--danger-line); }
+.wfs-card-mismatch .wfs-card-head { background: var(--danger-soft); }
+
+.wfs-card-detail { padding: 16px; background: var(--paper); border-top: 1px solid var(--line); overflow: hidden; }
+.wfs-card-detail .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.wfs-card-detail .detail-grid div { display: grid; gap: 4px; }
+.wfs-card-detail .detail-grid b { font-size: 11px; color: var(--muted); font-weight: 600; }
+.wfs-card-detail .detail-grid span { font-size: 13px; color: var(--ink-2); word-break: break-word; }
+
+/* Logistics tracking: horizontal timeline, dots sit centred on the line. The list keeps top padding so the dots are not clipped by its overflow. */
+.wfs-tracking { margin: 16px 0 20px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-control); }
+.wfs-tracking-timeline { list-style: none; margin: 0; padding: 20px 8px 8px; display: flex; gap: 0; overflow-x: auto; min-height: 112px; }
+.wfs-tracking-timeline li { position: relative; flex: 1 0 180px; display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 16px 14px 0 0; border-top: 2px solid var(--line-strong); }
+.wfs-tracking-timeline li::before { content: ""; position: absolute; left: 0; top: -7px; width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--accent); }
+.wfs-tracking-timeline li.pending::before { background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong); }
+.wfs-tracking-timeline time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.wfs-tracking-timeline li > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wfs-tracking-timeline strong { color: var(--ink); font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.wfs-tracking-timeline small { color: var(--muted); font-size: 11px; }
+@media (max-width: 640px) { .wfs-tracking-timeline { flex-direction: column; overflow-x: visible; padding: 4px 0 0 8px; } .wfs-tracking-timeline li { flex: none; border-top: 0; border-left: 2px solid var(--line-strong); padding: 0 0 16px 18px; } .wfs-tracking-timeline li::before { left: -7px; top: 2px; } }
+
+.wfs-receipt-export { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line-soft); }
+.wfs-receipt-export h4 { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+.wfs-sku-count { color: var(--accent); font-weight: 700; }
+.wfs-receipt-actions { display: flex; align-items: center; gap: 10px; }
+.wfs-export-button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-control); background: transparent; color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .12s ease, color .12s ease; }
+.wfs-export-button:hover { background: var(--paper); color: var(--ink); }
+.wfs-export-format { margin-left: 2px; color: var(--muted); font-size: 11px; }
+
+.wfs-card-detail table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 8px; }
+.wfs-card-detail table th { text-align: left; padding: 8px; border-bottom: 1px solid var(--line-soft); background: var(--surface); color: var(--muted); font-weight: 600; }
+.wfs-card-detail table td { padding: 8px; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); }
+.wfs-card-detail table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.wfs-card-detail table td strong { color: var(--ink); }
+.wfs-product-image-cell { width: 56px; }
+.wfs-product-image { width: 40px; height: 40px; border-radius: var(--r-control); border: 1px solid var(--line); background: var(--surface); object-fit: contain; padding: 2px; display: block; }
+.wfs-product-image-empty { width: 40px; height: 40px; border-radius: var(--r-control); border: 1px solid var(--line); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; }
+.wfs-item-description { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 1100px) {
+  .wfs-table-head { grid-template-columns: 22px 1fr 1.2fr 1fr; }
+  .wfs-table-head span:nth-of-type(n+5) { display: none; }
+  .wfs-card-head { grid-template-columns: 22px 1fr 1.2fr 1fr; }
+  .wfs-card-head span:nth-of-type(n+5) { display: none; }
+  .wfs-card-date { display: block !important; }
+  .wfs-card-detail .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .wfs-table-head { grid-template-columns: 22px 1fr 1fr; }
+  .wfs-table-head span:nth-of-type(n+4) { display: none; }
+  .wfs-card-head { grid-template-columns: 22px 1fr 1fr; }
+  .wfs-card-head span:nth-of-type(n+4) { display: none; }
+  .wfs-card-detail { padding: 12px; }
+  .wfs-card-detail .detail-grid { grid-template-columns: 1fr; gap: 10px; }
+  .wfs-receipt-export { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .wfs-export-button { width: 100%; justify-content: center; }
+  .wfs-item-description { max-width: 100%; }
+}
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; padding: 2px 0; color: var(--muted); font-size: 13px; }
+.pagination button { min-width: 72px; height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-control); background: var(--surface); color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .12s ease, border-color .12s ease; }
+.pagination button:hover:not(:disabled) { background: var(--paper); border-color: var(--accent); }
+.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+

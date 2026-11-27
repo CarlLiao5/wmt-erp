@@ -1,4 +1,7 @@
 import { productImageMarkup } from '../components/ProductImage.js';
+import './TargetsPage.css';
+// Completion tone: reached target, on the way, or well behind.
+const rateTone = (rate: number | null): string => rate == null ? 'none' : rate >= 1 ? 'good' : rate >= 0.6 ? 'mid' : 'low';
 
 type TargetRow = Record<string, unknown> & {
   storeId?: string;
@@ -39,7 +42,7 @@ export async function renderTargetsPage(main: HTMLElement, role: 'admin' | 'memb
     <section class="target-metrics${admin ? ' has-draft-metric' : ''}" data-metrics aria-label="目标完成概览">
       <article><span>筛选后目标金额</span><strong data-metric-target>加载中</strong><small>仅统计已定版金额目标</small></article>
       <article><span>匹配订单销售额</span><strong data-metric-sales>加载中</strong><small>按店铺与 SKU 归属</small></article>
-      <article><span>完成率</span><strong data-metric-rate>加载中</strong><small data-metric-count>等待目标数据</small></article>
+      <article class="target-rate-card"><span>完成率</span><strong data-metric-rate>加载中</strong><div class="target-rate-track"><i data-metric-rate-bar style="width:0%"></i></div><small data-metric-count>等待目标数据</small></article>
       ${admin ? '<article><span>草稿目标总额</span><strong data-metric-draft>加载中</strong><small data-metric-draft-count>读取草稿目标</small></article>' : ''}
     </section>
     <section class="targets-filter-bar" aria-label="搜索和筛选">
@@ -126,6 +129,9 @@ export async function renderTargetsPage(main: HTMLElement, role: 'admin' | 'memb
     main.querySelector<HTMLElement>('[data-metric-target]')!.textContent = currency(target);
     main.querySelector<HTMLElement>('[data-metric-sales]')!.textContent = completed == null ? '暂无数据' : currency(completed);
     main.querySelector<HTMLElement>('[data-metric-rate]')!.textContent = rate == null ? '暂无目标' : `${(rate * 100).toFixed(1)}%`;
+    const rateBar = main.querySelector<HTMLElement>('[data-metric-rate-bar]')!;
+    rateBar.style.width = `${rate == null ? 0 : Math.min(100, rate * 100)}%`;
+    rateBar.dataset.tone = rateTone(rate);
     main.querySelector<HTMLElement>('[data-metric-count]')!.textContent = finalized ? `${rows.length} 个匹配 SKU` : '等待目标定版';
     if (admin) {
       const draftValues = editorRows.map((row) => numberValue(row.amountTarget)).filter((value): value is number => value != null);
@@ -159,7 +165,7 @@ export async function renderTargetsPage(main: HTMLElement, role: 'admin' | 'memb
       const salesWidth = Math.max(0, Math.min(100, value.sales / max * 100));
       const rate = target != null && target > 0 ? value.sales / target : null;
       const rateText = rate == null ? '暂无目标' : `${(rate * 100).toFixed(1)}%`;
-      return `<article class="target-owner-row"><div class="target-owner-info"><strong>${escapeHtml(owner)}</strong><small>${value.skus} 个 SKU · 完成率 ${rateText}</small></div><div class="target-owner-bars"><div class="target-owner-bar-line"><span>目标</span><div class="target-owner-track"><i class="is-target" style="width:${targetWidth}%"></i></div><b>${escapeHtml(currency(target))}</b></div><div class="target-owner-bar-line"><span>完成</span><div class="target-owner-track"><i class="is-complete" style="width:${salesWidth}%"></i></div><b>${escapeHtml(currency(value.sales))}</b></div></div></article>`;
+      return `<article class="target-owner-row"><div class="target-owner-info"><strong>${escapeHtml(owner)}</strong><small>${value.skus} 个 SKU</small></div><span class="target-rate-chip" data-tone="${rateTone(rate)}">${rateText}</span><div class="target-owner-bars"><div class="target-owner-bar-line"><span>目标</span><div class="target-owner-track"><i class="is-target" style="width:${targetWidth}%"></i></div><b>${escapeHtml(currency(target))}</b></div><div class="target-owner-bar-line"><span>完成</span><div class="target-owner-track"><i class="is-complete" style="width:${salesWidth}%"></i></div><b>${escapeHtml(currency(value.sales))}</b></div></div></article>`;
     }).join('');
   };
 
@@ -242,7 +248,7 @@ export async function renderTargetsPage(main: HTMLElement, role: 'admin' | 'memb
         ['上月均价', displayValue(row, 'lastMonthAvgPrice')], ['预计日销', displayValue(row, 'expectedDailySales')],
         ['销售天数', displayValue(row, 'sellingDays')],
       ];
-      return `<tr>${values.map((value, index) => `<td>${trackingColumns[index][1] === 'imageUrl' || trackingColumns[index][1] === 'productName' ? value : escapeHtml(value)}</td>`).join('')}<td><div class="target-basis"><button class="target-basis-toggle" type="button" data-basis-toggle aria-expanded="false">查看依据</button><dl class="target-basis-content" hidden>${basis.map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl></div></td></tr>`;
+      return `<tr>${values.map((value, index) => { const key = trackingColumns[index][1]; if (key === 'imageUrl' || key === 'productName') return `<td>${value}</td>`; if (key === 'unitsRate' || key === 'salesRate') { const rate = key === 'unitsRate' ? (numberValue(row.quantityTarget) && numberValue(row.quantityTarget)! > 0 ? (numberValue(row.completedUnits ?? row.actualUnits) ?? 0) / numberValue(row.quantityTarget)! : null) : (numberValue(row.amountTarget) && numberValue(row.amountTarget)! > 0 ? (numberValue(row.completedSales) ?? 0) / numberValue(row.amountTarget)! : null); return `<td><span class="target-rate-chip" data-tone="${rateTone(rate)}">${escapeHtml(value)}</span></td>`; } return `<td>${escapeHtml(value)}</td>`; }).join('')}<td><div class="target-basis"><button class="target-basis-toggle" type="button" data-basis-toggle aria-expanded="false">查看依据</button><dl class="target-basis-content" hidden>${basis.map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl></div></td></tr>`;
     }).join('')}</tbody></table>`;
     bindSortButtons();
   };

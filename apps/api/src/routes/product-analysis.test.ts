@@ -61,6 +61,19 @@ describe('product analysis routes', () => {
     expect((await response.json()).data).toMatchObject({ metrics: { sales: 20, units: 2, returns: 3, sellerReturnedOrderCount: 1, returnRate: 1, onsiteSpend: 2 }, salesTrend: [{ date: '2026-10-01', sales: 20, units: 2 }], returnReasons: [{ reason: 'Damaged', count: 1 }], responsibilityDistribution: [{ responsibility: '卖家责任', count: 1 }, { responsibility: 'WFS责任', count: 1 }, { responsibility: '其他/未提供', count: 1 }], semTerms: [{ term: 'alpha', count: 1, spend: 1, sales: 0 }] });
   });
 
+  it('keeps onsite ad spend matched by item id for SKU-level members when the report msku differs', async () => {
+    const skuMember = async () => ({ tenantId: 't1', role: 'member' as const, storeIds: new Set<string>(), skus: new Set(['s1:SKU-A']) });
+    const router = productAnalysisRouter({ visibility: skuMember, products: async () => [catalog[0]], orders: async () => [], returns: async () => [],
+      ads: async () => [
+        { storeId: 's1', sku: 'OTHER-MSKU', itemId: 'I-A', factDate: '2026-10-01', channel: 'onsite', spend: 7 },
+        { storeId: 's1', sku: 'UNRELATED', itemId: 'I-Z', factDate: '2026-10-01', channel: 'onsite', spend: 99 },
+      ],
+    });
+    const response = await request(router, '/api/product-analysis?sku=SKU-A&storeId=s1&from=2026-10-01&to=2026-10-01');
+    expect(response.status).toBe(200);
+    expect((await response.json()).data.metrics.onsiteSpend).toBe(7);
+  });
+
   it('groups return reason codes with their equivalent descriptions', async () => {
     const router = productAnalysisRouter({ visibility, products: async () => [catalog[0]], orders: async () => [], ads: async () => [],
       returns: async () => [

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { renderProductRateRows, renderReconciliationRows, renderReturnViewSwitch } from './ReturnsPage.js';
+import { renderProductRateRows, renderReconciliationRows, renderReturnViewSwitch, returnRateMarkup, returnStatusMarkup } from './ReturnsPage.js';
 
 it('renders the return views as an accessible segmented control with one active view', () => {
   const markup = renderReturnViewSwitch('product-rates');
@@ -44,4 +44,20 @@ it('draws the return trend across the measured container width without stretchin
   expect(wide).toContain('r="4"');
   expect(renderReturnTrend(rows,360)).toContain('viewBox="0 0 360 190"');
   expect(renderReturnTrend([],360)).toContain('暂无退货');
+});
+
+it('labels return status in Chinese, keeps unknown codes readable and escaped', () => {
+  expect(returnStatusMarkup('REFUNDED')).toBe('<span class="status-pill">已退款</span>');
+  expect(returnStatusMarkup('requested')).toBe('<span class="status-pill warn">待处理</span>');
+  expect(returnStatusMarkup('REJECTED')).toBe('<span class="status-pill neutral">已拒绝</span>');
+  expect(returnStatusMarkup('ON <HOLD>')).toBe('<span class="status-pill neutral">ON &lt;HOLD&gt;</span>');
+  expect(returnStatusMarkup(undefined)).toContain('—');
+});
+
+it('marks high return rates: stamp from 10%, warning from 5%, plain below', () => {
+  expect(returnRateMarkup(0.15)).toBe('<span class="stamp">15.00%</span>');
+  expect(returnRateMarkup(0.1)).toContain('stamp');
+  expect(returnRateMarkup(0.06)).toBe('<span class="status-pill warn">6.00%</span>');
+  expect(returnRateMarkup(0.012)).toBe('1.20%');
+  expect(returnRateMarkup(null)).toBe('—');
 });

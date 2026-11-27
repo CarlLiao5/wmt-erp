@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { buildSemSearchCloud, fetchAdvertisingPageResponses, filterPerformanceRows, filterSemSearchTermRows, groupPerformanceRows, groupPricingRows, paginateRows, performanceMetricLabel, SEM_SEARCH_CLOUD_GROUPS, sortSemItemRows, sortSemSearchTermRows } from './MarketingPages.js';
+import { buildSemSearchCloud, fetchAdvertisingPageResponses, filterPerformanceRows, filterSemSearchTermRows, groupPerformanceRows, groupPricingRows, paginateRows, performanceMetricLabel, performanceMetricOrder, performanceMetricTone, SEM_SEARCH_CLOUD_GROUPS, sortSemItemRows, sortSemSearchTermRows } from './MarketingPages.js';
 
 const reportRows = [
   { searchTerm: 'memory foam', reportDate: '2026-10-01', impressions: 10, adSpend: 1.25 },
@@ -96,6 +96,30 @@ it('groups seller performance rows by store for card rendering', () => {
     { metric: '30DAY.ots' },
     { metric: '30DAY.otd' },
   ], '30DAY').map(row => row.metric)).toEqual(['30DAY.ots', '30DAY.otd']);
+});
+
+it('rates performance metrics against the standard for that metric', () => {
+  // Higher is better: on-time rates and valid tracking.
+  expect(performanceMetricTone('30DAY.ots', 99.88)).toBe('good');
+  expect(performanceMetricTone('30DAY.ots', 92)).toBe('mid');
+  expect(performanceMetricTone('30DAY.ots', 80)).toBe('bad');
+  expect(performanceMetricTone('30DAY.otd', 66.67)).toBe('bad');
+  expect(performanceMetricTone('30DAY.vtr', 99.28)).toBe('good');
+  // Lower is better: fault rates.
+  expect(performanceMetricTone('30DAY.cancellationSellerFault', 0.91)).toBe('good');
+  expect(performanceMetricTone('30DAY.cancellationSellerFault', 5.13)).toBe('bad');
+  expect(performanceMetricTone('30DAY.refundRateSellerFault', 4)).toBe('mid');
+  // Missing values and unknown metrics make no claim.
+  expect(performanceMetricTone('30DAY.ots', null)).toBe('none');
+  expect(performanceMetricTone('30DAY.ots', '')).toBe('none');
+  expect(performanceMetricTone('30DAY.somethingElse', 1)).toBe('none');
+});
+
+it('orders performance metrics by business importance, not alphabetically', () => {
+  const metrics = ['30DAY.refundRateCustomerFault', '30DAY.ots', '30DAY.vtr', '30DAY.otd'];
+  expect([...metrics].sort((a, b) => performanceMetricOrder(a) - performanceMetricOrder(b)))
+    .toEqual(['30DAY.ots', '30DAY.otd', '30DAY.vtr', '30DAY.refundRateCustomerFault']);
+  expect(performanceMetricOrder('30DAY.unknownMetric')).toBe(99);
 });
 
 it('uses the newest current promotion and latest base and incentive snapshots per SKU', () => {

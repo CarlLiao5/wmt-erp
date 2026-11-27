@@ -1,0 +1,121 @@
+/* Inventory page. Shared tokens come from theme.css. */
+
+/* Metrics: five cards on one row. The three that filter the table show a pressed state. */
+.inventory-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 18px 0 16px; }
+.inventory-metrics article { position: relative; min-width: 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); }
+.inventory-metrics article::before { display: none; }
+.inventory-metrics span { display: block; color: var(--muted); font-size: 12px; }
+.inventory-metrics strong { display: block; margin-top: 8px; color: var(--ink); font-size: 24px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.inventory-metrics small { display: block; margin-top: 6px; font-size: 12px; line-height: 1.4; }
+.inventory-metrics article[role="button"] { cursor: pointer; transition: border-color .12s ease, background-color .12s ease; }
+.inventory-metrics article[role="button"]:hover { border-color: var(--line-strong); }
+.inventory-metrics article[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.inventory-metrics article.active { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.inventory-metrics [data-risk-filter="stockout"] strong { color: var(--danger); }
+@media (max-width: 1200px) { .inventory-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .inventory-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Age distribution: one row per age band, full width */
+.inventory-charts { display: block; margin: 0 0 16px; }
+.inventory-charts > .chart { height: auto; min-height: 0; overflow: visible; padding: 16px 18px; }
+.inventory-charts h3 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 600; }
+.inventory-charts p.muted { margin: 4px 0 12px; font-size: 12px; }
+.inventory-age-rows { display: grid; gap: 8px; max-width: 760px; }
+.inventory-age-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 72px 40px; align-items: center; gap: 12px; }
+.age-label { color: var(--ink-2); font-size: 13px; }
+.age-track { display: block; height: 10px; border-radius: 5px; background: var(--line-soft); overflow: hidden; }
+.age-track i { display: block; height: 100%; border-radius: 5px; background: var(--accent); }
+.inventory-age-row strong { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.inventory-age-row small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Filter bar */
+.inventory-filters { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px; margin-bottom: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-control); }
+.inventory-filters select { width: 150px; }
+.inventory-filters input[name="sku"] { width: 200px; }
+.inventory-filters input[name="productName"] { flex: 1 1 220px; min-width: 0; width: auto; }
+.inventory-filters button { height: 38px; padding: 0 16px; font-size: 13px; font-weight: 600; }
+@media (max-width: 640px) { .inventory-filters select, .inventory-filters input { width: 100% !important; flex-basis: 100% !important; } .inventory-filters button { flex: 1; height: 44px; } }
+
+/* The reconciliation export stays out of the way until it is wanted */
+.inventory-recon-export { margin: 0 0 12px; text-align: right; }
+.inventory-recon-export > summary { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--r-control); color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer; list-style: none; }
+.inventory-recon-export > summary::-webkit-details-marker { display: none; }
+.inventory-recon-export > summary::after { content: "展开"; color: var(--muted); font-weight: 400; font-size: 12px; }
+.inventory-recon-export[open] > summary::after { content: "收起"; }
+.inventory-recon-export > summary:hover { background: var(--paper); }
+.inventory-recon-export > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.inventory-recon-form { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 12px; margin-top: 8px; padding: 12px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-control); text-align: left; }
+.inventory-recon-form label { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.inventory-recon-form input { height: 36px; }
+.inventory-recon-form .primary { height: 36px; padding: 0 16px; }
+.inventory-recon-note, .inventory-recon-status { flex: 1 1 100%; margin: 0; font-size: 12px; }
+.inventory-recon-status:empty { display: none; }
+
+.inventory-risk-state { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; color: var(--ink-2); font-size: 13px; }
+.inventory-risk-state[hidden] { display: none; }
+.inventory-risk-state button { height: 30px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-control); background: var(--surface); color: var(--ink-2); font-size: 12px; cursor: pointer; }
+
+/* Table */
+.inventory-table th.num, .inventory-table td.num { text-align: right; }
+.inventory-table .table-sort { padding: 0; border: 0; background: transparent; color: var(--accent-strong); font: inherit; font-weight: 600; cursor: pointer; }
+.inventory-table td { vertical-align: middle; }
+.inv-product { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.inv-product .item-thumb-cell { width: auto; flex: none; }
+.inv-product-text { display: grid; gap: 2px; min-width: 0; justify-items: start; }
+.inv-cn { color: var(--ink-2); font-size: 13px; }
+.inv-name { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.inventory-table td.is-low { color: var(--danger); font-weight: 700; }
+.inventory-table td.num { font-variant-numeric: tabular-nums; }
+.inventory-table td .link .status-pill { margin-left: 6px; }
+.inv-updated { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.inventory-results .empty { padding: 40px 16px; }
+
+/* Dialogs */
+.inventory-log-modal { background: rgba(27, 39, 51, .45); }
+.inventory-log-dialog { border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: 0 24px 60px rgba(27, 39, 51, .28); }
+.inventory-log-header h2 { color: var(--ink); font-size: 18px; font-weight: 700; }
+.inventory-log-close { color: var(--muted); border-radius: var(--r-control); }
+.inventory-log-close:hover { background: var(--paper); color: var(--ink); }
+.inventory-log-body th.num, .inventory-log-body td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.inventory-log-body td.neg { color: var(--danger); }
+
+.inventory-recon-export { border: 0; padding: 0; }
+
+/* Age distribution: bars on the left, what to do about them on the right */
+.inventory-age-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start; }
+.inventory-age-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.age-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--paper); min-width: 0; }
+.age-card.is-aged { background: var(--surface); border-color: var(--line-strong); box-shadow: inset 3px 0 0 var(--danger); }
+.age-card h4 { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+.age-desc { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+.age-stat { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+.age-stat strong { color: var(--ink); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.age-stat small { color: var(--muted); font-size: 12px; }
+.age-card.is-aged .age-stat strong { color: var(--danger); }
+.age-breakdown { display: grid; gap: 8px; margin-top: 14px; }
+.age-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 64px 36px; align-items: center; gap: 10px; }
+.age-row-label { color: var(--ink-2); font-size: 13px; }
+.age-row-track { display: block; height: 8px; border-radius: 4px; background: var(--line-soft); overflow: hidden; }
+.age-row-track i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+.age-card.is-aged .age-row-track i { background: var(--danger); opacity: .75; }
+.age-row strong { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.age-row small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .inventory-age-cards { grid-template-columns: 1fr; } }
+.inventory-age-insight { padding-left: 28px; border-left: 1px solid var(--line); min-width: 0; }
+.age-insight-stat span { display: block; color: var(--muted); font-size: 12px; }
+.age-insight-stat strong { display: block; margin-top: 6px; color: var(--ink); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.age-insight-stat small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+.inventory-age-insight h4 { margin: 16px 0 6px; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.age-insight-list { margin: 0; padding: 0; list-style: none; }
+.age-insight-list li + li { border-top: 1px solid var(--line-soft); }
+.age-insight-list button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 7px 4px; border: 0; border-radius: var(--r-control); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.age-insight-list button:hover { background: var(--paper); }
+.age-insight-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.age-insight-sku { color: var(--accent-strong); font-size: 13px; font-weight: 600; }
+.age-insight-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.age-insight-list strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+.age-insight-ok { margin: 14px 0 0; color: var(--accent-strong); font-size: 13px; }
+@media (max-width: 1100px) {
+  .inventory-age-layout { grid-template-columns: 1fr; gap: 18px; }
+  .inventory-age-insight { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+}

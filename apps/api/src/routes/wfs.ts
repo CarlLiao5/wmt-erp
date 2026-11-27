@@ -147,9 +147,9 @@ export function filterVisibleWfsRows(rows: WfsHistoryRow[], visibility: OrderVis
     const receivedUnits = numberTotal(items, 'receivedQty', 'receivedQuantity', 'actualReceivedQty');
     const actualShippedUnits = numberTotal(items, 'actualShippedQty');
     const actualReceivedUnits = numberTotal(items, 'actualReceivedQty');
-    const { id, status, occurredAt, shipmentId, inboundOrderId, trackingNo, carrierName, createdDate, expectedDeliveryDate, actualDeliveryDate, shipToAddress } = row;
+    const { id, status, occurredAt, shipmentId, inboundOrderId, trackingNo, carrierName, createdDate, expectedDeliveryDate, actualDeliveryDate, shipToAddress, tracking } = row;
     const fullyReceived = actualShippedUnits != null && actualReceivedUnits != null ? actualReceivedUnits >= actualShippedUnits : undefined;
-    return [{ id, status, occurredAt, storeId, shipmentId, inboundOrderId, trackingNo, carrierName, createdDate, expectedDeliveryDate, actualDeliveryDate, shipToAddress, items, feePreviews, headFreightItems, shipmentUnits, receivedUnits, actualShippedUnits, actualReceivedUnits, fullyReceived }];
+    return [{ id, status, occurredAt, storeId, shipmentId, inboundOrderId, trackingNo, carrierName, createdDate, expectedDeliveryDate, actualDeliveryDate, shipToAddress, tracking, items, feePreviews, headFreightItems, shipmentUnits, receivedUnits, actualShippedUnits, actualReceivedUnits, fullyReceived }];
   });
 }
 

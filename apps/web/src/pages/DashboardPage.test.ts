@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { beginDashboardRender, dashboardTrendSvg, formatFreshness, formatStorageCard, normalizeTrendDate, shortTrendDate, trendBarHeight, last30Days } from './DashboardPage.js';
+import { stockDaysMarkup, usd, beginDashboardRender, dashboardTrendSvg, formatFreshness, formatStorageCard, normalizeTrendDate, shortTrendDate, trendBarHeight, last30Days } from './DashboardPage.js';
 
 it('ignores an older dashboard render after a newer render starts', () => {
   const host = {};
@@ -53,4 +53,17 @@ it('sizes the daily chart from its panel and observes later layout changes', () 
   const source = readFileSync(new URL('./DashboardPage.tsx', import.meta.url), 'utf8');
   expect(source).toContain('new ResizeObserver(');
   expect(source).not.toContain('const chartWidth = TREND_CHART.width;');
+});
+
+it('formats dashboard money with thousands separators and two decimals', () => {
+  expect(usd(34158)).toBe('$34,158.00');
+  expect(usd(0.5)).toBe('$0.50');
+});
+
+it('marks stock by urgency: stamp within a week, warning within two, plain otherwise', () => {
+  expect(stockDaysMarkup(4)).toBe('<span class="stamp">4 天</span>');
+  expect(stockDaysMarkup(7)).toContain('stamp');
+  expect(stockDaysMarkup(12)).toBe('<span class="status-pill warn">12 天</span>');
+  expect(stockDaysMarkup(60)).toBe('60 天');
+  expect(stockDaysMarkup(null)).toContain('—');
 });
