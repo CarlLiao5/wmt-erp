@@ -1,0 +1,61 @@
+/* Targets page. Shared tokens come from theme.css. Selectors carry a parent so they win over the older rules in styles.css. */
+
+/* Header and filters */
+.targets-header h1 { font-size: 26px; }
+.targets-filter-bar { background: var(--paper); border-color: var(--line); border-radius: var(--r-control); }
+.targets-filter-bar input, .targets-filter-bar select, .target-month-field input { border-color: var(--line-strong); border-radius: var(--r-control); }
+@media (max-width: 760px) { .targets-header { flex-direction: column; align-items: stretch; } .targets-filter-bar { grid-template-columns: 1fr 1fr; } .targets-search-field { grid-column: 1 / -1; } }
+
+/* Metrics */
+.target-metrics article { position: relative; min-height: 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); }
+.target-metrics span { color: var(--muted); }
+.target-metrics strong { margin: 8px 0 6px; color: var(--ink); font-size: 24px; font-weight: 700; line-height: 1.1; }
+.target-metrics small { color: var(--muted); }
+.target-rate-track { height: 6px; margin: 2px 0 8px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.target-rate-track i { display: block; height: 100%; border-radius: 3px; background: var(--line-strong); transition: width .25s ease; }
+.target-rate-track i[data-tone="good"] { background: var(--accent); }
+.target-rate-track i[data-tone="mid"] { background: var(--warn); }
+.target-rate-track i[data-tone="low"] { background: var(--danger); }
+
+/* Completion chip, shared by the owner rows and the tracking table */
+.target-rate-chip { display: inline-block; padding: 2px 9px; border-radius: var(--r-pill); background: var(--line-soft); color: var(--muted); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.target-rate-chip[data-tone="good"] { background: var(--accent-soft); color: var(--accent-strong); }
+.target-rate-chip[data-tone="mid"] { background: var(--warn-soft); color: var(--warn); }
+.target-rate-chip[data-tone="low"] { background: var(--danger-soft); color: var(--danger); }
+
+/* Section headings: a light divider instead of a heavy rule */
+.target-owner-panel, .target-detail-panel { border-top-color: var(--line); }
+.target-section-heading h2 { color: var(--ink); }
+
+/* Owner performance */
+.target-owner-panel .target-owner-chart { column-gap: 24px; }
+.target-owner-panel .target-owner-row { grid-template-columns: minmax(96px, .6fr) auto minmax(220px, 1.4fr); gap: 14px; border-bottom-color: var(--line-soft); }
+.target-owner-info strong { color: var(--ink); }
+.target-owner-track { height: 8px; border-radius: 4px; background: var(--line-soft); }
+.target-owner-track i { border-radius: 4px; }
+.target-owner-track .is-target { background: var(--line-strong); }
+.target-owner-track .is-complete { background: var(--accent); }
+@media (max-width: 1100px) { .target-owner-panel .target-owner-chart { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .target-owner-panel .target-owner-row { grid-template-columns: minmax(0, 1fr) auto; } .target-owner-panel .target-owner-bars { grid-column: 1 / -1; } }
+
+/* View switch */
+.target-view-switch { background: var(--paper); border-color: var(--line); border-radius: var(--r-control); }
+.target-view-switch button { color: var(--muted); border-radius: 4px; }
+.target-view-switch button[aria-pressed="true"] { background: var(--surface); color: var(--accent-strong); }
+
+/* Table: header stays visible, numbers line up */
+.target-detail-panel .target-table-wrap { border-color: var(--line); border-radius: var(--r-panel); }
+.target-detail-panel .target-table th { background: var(--paper); color: var(--muted); font-size: 12px; border-bottom-color: var(--line); }
+.target-detail-panel .target-table td { border-bottom-color: var(--line-soft); color: var(--ink-2); vertical-align: middle; }
+.target-detail-panel .target-table tbody tr:hover td { background: #f6f9f9; }
+.target-detail-panel .target-table td:first-child, .target-detail-panel .target-table th:first-child { position: static; background: inherit; }
+.target-tracking-table td:nth-child(7), .target-tracking-table td:nth-child(10) { color: var(--ink); }
+.target-basis-toggle { color: var(--accent-strong); }
+.target-basis-content { background: var(--paper); border-color: var(--line); border-radius: var(--r-control); }
+
+/* Admin tools: look like a collapsible panel, not loose text */
+.target-admin-tools { margin-top: 24px; padding: 0; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--surface); }
+.target-admin-tools > summary { padding: 12px 16px; color: var(--ink-2); }
+.target-admin-tools[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.target-admin-content { padding: 12px 16px 16px; }
+.target-admin-tools[open] { padding-bottom: 0; }

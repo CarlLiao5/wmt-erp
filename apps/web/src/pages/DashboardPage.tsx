@@ -1,4 +1,5 @@
 import { dateRangePickerMarkup, mountDateRangePicker } from '../components/DateRangePicker.js';
+import './DashboardPage.css';
 
 export interface DashboardView { metrics: { revenue: number; orders: number; units: number; refunds: number; profit: number; profitAvailable?: boolean; estimated: boolean }; trend: DashboardTrendRow[]; freshness: string | null; stores?: Array<{ storeId: string; storeName: string; revenue: number; orders: number; units: number }>; stockoutRisk?: Array<{ sku: string; title: string; inventory: number; units30d: number; daysLeft: number | null }>; adSpend?: { today: number | null; month: number | null; trend: Array<{ date: string; onsite: number; sem: number }> }; highAcos?: Array<{ sku: string; storeName: string; spend: number; sales: number; acos: number }>; }
 export interface StorageCardData { month?: string | null; amount: number | null; currency: string | null; period?: { startDate: string | null; endDate: string | null } }
@@ -8,6 +9,15 @@ export function formatStorageCard(data: StorageCardData): { value: string; perio
   const endDate = data.period?.endDate;
   const month = data.month ? `最新账期 ${data.month}` : '最新账期';
   return { value, period: startDate && endDate ? `${month} · ${startDate.replaceAll('-', '/')} - ${endDate.replaceAll('-', '/')}` : `${month} · 费用周期待账单返回` };
+}
+const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char);
+export const usd = (value: number) => '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Stock running out is the one thing here that needs action today, so it is marked the same way as other anomalies.
+export function stockDaysMarkup(daysLeft: number | null): string {
+  if (daysLeft == null) return '<span class="muted">—</span>';
+  if (daysLeft <= 7) return `<span class="stamp">${daysLeft} 天</span>`;
+  if (daysLeft <= 14) return `<span class="status-pill warn">${daysLeft} 天</span>`;
+  return `${daysLeft} 天`;
 }
 const dashboardTrendObservers = new WeakMap<HTMLElement, ResizeObserver>();
 const dashboardRenderVersions = new WeakMap<object, number>();
@@ -88,47 +98,55 @@ export async function renderDashboardPage(main: HTMLElement): Promise<void> {
   const previousSku = main.querySelector<HTMLInputElement>('[data-dashboard-sku]')?.value ?? '';
   const previousFrom = main.querySelector<HTMLInputElement>('[data-date-range-from]')?.value ?? '';
   const previousTo = main.querySelector<HTMLInputElement>('[data-date-range-to]')?.value ?? '';
-  main.innerHTML = '<header><div><p class="eyebrow">经营概览</p><h1>Dashboard</h1><p class="muted">销售、退货、利润与目标完成度</p></div><div class="fresh">最新销售日（美国太平洋时间）<br><strong>读取中...</strong></div></header><section class="dashboard-filters"><label>店铺 <select data-dashboard-store><option value="">全部店铺</option></select></label><label>SKU <input data-dashboard-sku placeholder="SKU ID"></label>' + dateRangePickerMarkup('dashboard', previousFrom, previousTo) + '<button class="secondary" data-dashboard-apply>筛选</button></section><section class="metrics" data-dashboard-metrics>加载中...</section><section class="panel dashboard-trend-panel"><div class="panel-head"><div><h2>日趋势</h2><span class="muted">按美国太平洋时间聚合 · 数据未估算</span></div></div><div data-dashboard-trend class="dashboard-trend">加载中...</div></section><section class="dashboard-chart-grid"><article class="panel dashboard-chart"><h2>利润趋势</h2><div class="dashboard-empty">暂无成本数据</div></article><article class="panel dashboard-chart"><h2>站内广告和 SEM 花费</h2><div class="dashboard-empty">暂无广告花费数据</div></article><article class="panel dashboard-chart" data-dashboard-stores><h2>多店铺销售信息</h2><div class="dashboard-empty">加载中...</div></article><article class="panel dashboard-chart" data-dashboard-risk><h2>库存告急 Top 10</h2><p class="muted">30天内断货风险</p><div class="dashboard-empty">加载中...</div></article><article class="panel dashboard-chart"><h2>广告 ACOS 过高 Top 10</h2><div class="dashboard-empty">暂无广告数据</div></article><article class="panel dashboard-chart"><h2>搜索排名下降榜</h2><div class="dashboard-empty">暂无搜索排名数据</div></article></section>';
+  main.innerHTML = '<header><div><h1>仪表盘</h1><p class="muted">销售、退货、利润与目标完成度</p></div><div class="fresh">最新销售日（美国太平洋时间）<br><strong>读取中...</strong></div></header><section class="dashboard-filters"><label>店铺 <select data-dashboard-store><option value="">全部店铺</option></select></label><label>SKU <input data-dashboard-sku placeholder="SKU ID"></label>' + dateRangePickerMarkup('dashboard', previousFrom, previousTo) + '<button class="secondary" data-dashboard-apply>筛选</button></section><section class="kpi-board" data-dashboard-metrics><div class="kpi-row"><div class="kpi skeleton"></div><div class="kpi skeleton"></div><div class="kpi skeleton"></div><div class="kpi skeleton"></div></div></section><section class="panel dashboard-trend-panel"><div class="panel-head"><div><h2>日趋势</h2><span class="muted">按美国太平洋时间聚合 · 数据未估算</span></div></div><div data-dashboard-trend class="dashboard-trend">加载中...</div></section><section class="dashboard-chart-grid"><article class="panel dashboard-chart"><h2>利润趋势</h2><div class="dashboard-empty">暂无成本数据</div></article><article class="panel dashboard-chart"><h2>站内广告和 SEM 花费</h2><div class="dashboard-empty">暂无广告花费数据</div></article><article class="panel dashboard-chart" data-dashboard-stores><h2>多店铺销售信息</h2><div class="dashboard-empty">加载中...</div></article><article class="panel dashboard-chart" data-dashboard-risk><h2>库存告急 Top 10</h2><p class="muted">30天内断货风险</p><div class="dashboard-empty">加载中...</div></article><article class="panel dashboard-chart"><h2>广告 ACOS 过高 Top 10</h2><div class="dashboard-empty">暂无广告数据</div></article><article class="panel dashboard-chart"><h2>搜索排名下降榜</h2><div class="dashboard-empty">暂无搜索排名数据</div></article></section>';
   main.querySelector<HTMLInputElement>('[data-dashboard-sku]')!.value = previousSku;
   mountDateRangePicker(main, 'dashboard', () => { void renderDashboardPage(main); });
   const query = new URLSearchParams(); const store = previousStore; const sku = previousSku; const from = previousFrom; const to = previousTo; if (store) query.set('storeId', store); if (sku) query.set('skuId', sku); if (from) query.set('from', from); if (to) query.set('to', to);
   const response = await fetch('http://localhost:3000/api/dashboard/overview?' + query.toString(), { credentials: 'include' });
   if (!dashboardIsMounted()) return;
-  if (!response.ok) { main.querySelector('[data-dashboard-metrics]')!.textContent = '经营概览读取失败'; return; }
+  if (!response.ok) { main.querySelector('[data-dashboard-metrics]')!.innerHTML = '<div class="empty error">经营概览读取失败，请刷新页面重试</div>'; return; }
   const body = await response.json() as { data: DashboardView }; const data = body.data;
   if (!dashboardIsMounted()) return;
-  const storeSelect = main.querySelector<HTMLSelectElement>('[data-dashboard-store]'); if (storeSelect && data.stores) { storeSelect.innerHTML = '<option value="">全部店铺</option>' + data.stores.map((item) => '<option value="' + item.storeId + '">' + item.storeName + '</option>').join(''); storeSelect.value = previousStore; }
-  main.querySelector<HTMLElement>('[data-dashboard-stores]')!.innerHTML = '<h2>多店铺销售信息</h2>' + (data.stores?.length ? '<table class="data-table"><tbody>' + data.stores.map((item) => '<tr><td>' + item.storeName + '</td><td>$' + item.revenue.toFixed(2) + '</td><td>' + item.units + ' 件</td><td>' + item.orders + ' 单</td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无多店铺聚合数据</div>');
+  const storeSelect = main.querySelector<HTMLSelectElement>('[data-dashboard-store]'); if (storeSelect && data.stores) { storeSelect.innerHTML = '<option value="">全部店铺</option>' + data.stores.map((item) => '<option value="' + esc(item.storeId) + '">' + esc(item.storeName) + '</option>').join(''); storeSelect.value = previousStore; }
+  main.querySelector<HTMLElement>('[data-dashboard-stores]')!.innerHTML = '<h2>多店铺销售信息</h2>' + (data.stores?.length ? '<table class="data-table dashboard-stores-table"><thead><tr><th>店铺</th><th class="num">销售额</th><th class="num">销量</th><th class="num">订单</th></tr></thead><tbody>' + [...data.stores].sort((a, b) => b.revenue - a.revenue).map((item) => '<tr><td>' + esc(item.storeName) + '</td><td class="num">' + usd(item.revenue) + '</td><td class="num">' + item.units.toLocaleString('en-US') + '</td><td class="num">' + item.orders.toLocaleString('en-US') + '</td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无多店铺聚合数据</div>');
   // Keep the dashboard light by defaulting the ad chart to the latest 30 days;
   // an explicit date filter must be allowed to reveal older spend data.
   const adTrend = from || to ? (data.adSpend?.trend ?? []) : latestThirtyDayAdRows(data.adSpend?.trend ?? []);
   const maxAdSpend = Math.max(1, ...adTrend.map((row) => row.onsite + row.sem));
-  const adChart = adTrend.length ? `<div class="dashboard-ad-legend"><span><i class="onsite"></i>站内广告</span><span><i class="sem"></i>SEM</span></div><div class="dashboard-ad-bars">${adTrend.slice(-30).map((row) => { const onsiteHeight = row.onsite / maxAdSpend * 132; const semHeight = row.sem / maxAdSpend * 132; return `<div class="dashboard-ad-day" tabindex="0" title="${row.date} · 站内广告 $${row.onsite.toFixed(2)} · SEM $${row.sem.toFixed(2)}"><div class="dashboard-ad-columns"><i class="onsite" style="height:${Math.max(row.onsite ? 3 : 0, onsiteHeight)}px"></i><i class="sem" style="height:${Math.max(row.sem ? 3 : 0, semHeight)}px"></i></div><span>${shortTrendDate(row.date)}</span></div>`; }).join('')}</div>` : '<div class="dashboard-empty">暂无广告花费数据</div>';
+  const adChart = adTrend.length ? `<div class="dashboard-ad-legend"><span><i class="onsite"></i>站内广告</span><span><i class="sem"></i>SEM</span></div><div class="dashboard-ad-bars">${adTrend.slice(-30).map((row) => { const onsiteHeight = row.onsite / maxAdSpend * 132; const semHeight = row.sem / maxAdSpend * 132; return `<div class="dashboard-ad-day" tabindex="0" title="${row.date} · 站内广告 ${usd(row.onsite)} · SEM ${usd(row.sem)}"><div class="dashboard-ad-columns"><i class="onsite" style="height:${Math.max(row.onsite ? 3 : 0, onsiteHeight)}px"></i><i class="sem" style="height:${Math.max(row.sem ? 3 : 0, semHeight)}px"></i></div><span>${shortTrendDate(row.date)}</span></div>`; }).join('')}</div>` : '<div class="dashboard-empty">暂无广告花费数据</div>';
   const adSpendPanel = main.querySelector<HTMLElement>('.dashboard-chart:nth-child(2)');
   if (adSpendPanel) adSpendPanel.innerHTML = '<h2>站内广告和 SEM 花费</h2>' + adChart;
   const acosPanel = main.querySelector<HTMLElement>('.dashboard-chart:nth-child(5)');
-  if (acosPanel) acosPanel.innerHTML = '<h2>广告 ACOS 过高 Top 10</h2>' + (data.highAcos?.length ? '<table class="data-table dashboard-acos-table"><thead><tr><th>SKU</th><th>花费</th><th>销售额</th><th>ACOS</th></tr></thead><tbody>' + data.highAcos.map((item) => '<tr title="' + item.storeName + '"><td>' + item.sku + '</td><td>$' + item.spend.toFixed(2) + '</td><td>$' + item.sales.toFixed(2) + '</td><td><strong>' + (item.acos * 100).toFixed(2) + '%</strong></td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无可计算 ACOS 的站内广告数据</div>');
-  main.querySelector<HTMLElement>('[data-dashboard-risk]')!.innerHTML = '<h2>库存告急 Top 10</h2><p class="muted">30天内断货风险</p>' + (data.stockoutRisk?.length ? '<table class="data-table"><tbody>' + data.stockoutRisk.map((item) => '<tr><td>' + item.title + '</td><td>' + item.inventory + '</td><td>' + (item.daysLeft == null ? '—' : item.daysLeft + ' 天') + '</td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无库存风险数据</div>');
+  if (acosPanel) acosPanel.innerHTML = '<h2>广告 ACOS 过高 Top 10</h2>' + (data.highAcos?.length ? '<table class="data-table dashboard-acos-table"><thead><tr><th>SKU</th><th class="num">花费</th><th class="num">销售额</th><th class="num">ACOS</th></tr></thead><tbody>' + data.highAcos.map((item) => '<tr title="' + esc(item.storeName) + '"><td>' + esc(item.sku) + '</td><td class="num">' + usd(item.spend) + '</td><td class="num">' + usd(item.sales) + '</td><td class="num"><strong class="acos-high">' + (item.acos * 100).toFixed(1) + '%</strong></td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无可计算 ACOS 的站内广告数据</div>');
+  main.querySelector<HTMLElement>('[data-dashboard-risk]')!.innerHTML = '<h2>库存告急 Top 10</h2><p class="muted">30天内断货风险</p>' + (data.stockoutRisk?.length ? '<table class="data-table dashboard-risk-table"><thead><tr><th>商品</th><th class="num">库存</th><th class="num">可售天数</th></tr></thead><tbody>' + data.stockoutRisk.map((item) => '<tr><td><div class="risk-title" title="' + esc(item.title) + '">' + esc(item.title) + '</div><div class="risk-sku">' + esc(item.sku) + '</div></td><td class="num">' + item.inventory.toLocaleString('en-US') + '</td><td class="num">' + stockDaysMarkup(item.daysLeft) + '</td></tr>').join('') + '</tbody></table>' : '<div class="dashboard-empty">暂无库存风险数据</div>');
   main.querySelector<HTMLButtonElement>('[data-dashboard-apply]')!.onclick = () => { void renderDashboardPage(main); };
   const currentPacificMonth = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit' }).format(new Date());
   const monthTrendRevenue = data.trend.filter((row) => normalizeTrendDate(row.date).startsWith(currentPacificMonth)).reduce((sum, row) => sum + Number(row.revenue || 0), 0);
-  let target = '读取中...'; let completed = '$' + monthTrendRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  let target = '读取中...'; let completed = usd(monthTrendRevenue); let targetNum: number | null = null; let completedNum = monthTrendRevenue;
   let storageCard = { value: '读取中...', period: '账单读取中...' };
   const renderMetricCards = () => {
     if (!dashboardIsMounted()) return;
     const noDateData = data.trend.length === 0;
-    const cards: Array<[string, string, string?]> = [
-      ['销售额', noDateData ? '暂无数据' : '$' + data.metrics.revenue.toFixed(2)],
-      ['销量', noDateData ? '暂无数据' : String(data.metrics.units)],
-      ['订单量', noDateData ? '暂无数据' : String(data.metrics.orders)],
-      ['利润', noDateData ? '暂无数据' : !data.metrics.profitAvailable ? '暂无数据' : '$' + data.metrics.profit.toFixed(2), data.metrics.profitAvailable && data.metrics.estimated ? '粗算 · 部分费用或日期待补' : undefined],
-      ['广告花费（今日）', data.adSpend?.today == null ? '暂无数据' : '$' + data.adSpend.today.toFixed(2)],
-      ['站内广告花费（本月）', data.adSpend?.month == null ? '暂无数据' : '$' + data.adSpend.month.toFixed(2)],
-      ['最新仓储账单', storageCard.value, storageCard.period],
-      ['本月目标', target],
-      ['本月已完成', completed],
+    const unavailable = '暂无数据';
+    const profitValue = noDateData || !data.metrics.profitAvailable ? unavailable : usd(data.metrics.profit);
+    const kpi = (label: string, value: string, detail?: string, extra = '', tone = '') => `<article class="kpi${tone ? ` ${tone}` : ''}${value === unavailable || value === '读取中...' ? ' is-empty' : ''}"><span>${label}</span><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}${extra}</article>`;
+    const pct = targetNum ? Math.round(completedNum / targetNum * 100) : null;
+    const goalCard = pct != null
+      ? kpi('本月目标完成', `${pct}%`, `${usd(completedNum)} / ${usd(targetNum!)}`, `<span class="kpi-progress" role="img" aria-label="目标完成 ${pct}%"><i style="width:${Math.min(100, pct)}%"></i></span>`)
+      : kpi('本月目标完成', target === '读取中...' ? '读取中...' : target, `本月已完成 ${completed}`);
+    const primary = [
+      kpi('销售额', noDateData ? unavailable : usd(data.metrics.revenue)),
+      kpi('销量', noDateData ? unavailable : data.metrics.units.toLocaleString('en-US')),
+      kpi('订单量', noDateData ? unavailable : data.metrics.orders.toLocaleString('en-US')),
+      kpi('利润', profitValue, data.metrics.profitAvailable && data.metrics.estimated ? '粗算，部分费用或日期待补' : undefined, '', !noDateData && data.metrics.profitAvailable && data.metrics.profit < 0 ? 'is-negative' : ''),
     ];
-    main.querySelector('[data-dashboard-metrics]')!.innerHTML = cards.map(([label, value, detail]) => '<article><span>' + label + '</span><strong>' + value + '</strong>' + (detail ? '<small class="muted">' + detail + '</small>' : '') + '</article>').join('');
+    const secondary = [
+      kpi('广告花费（今日）', data.adSpend?.today == null ? unavailable : usd(data.adSpend.today)),
+      kpi('站内广告花费（本月）', data.adSpend?.month == null ? unavailable : usd(data.adSpend.month)),
+      kpi('最新仓储账单', storageCard.value, storageCard.period),
+      goalCard,
+    ];
+    main.querySelector('[data-dashboard-metrics]')!.innerHTML = `<div class="kpi-row">${primary.join('')}</div><div class="kpi-row compact">${secondary.join('')}</div>`;
   };
   renderMetricCards();
   void Promise.all([
@@ -144,8 +162,10 @@ export async function renderDashboardPage(main: HTMLElement): Promise<void> {
           // summary endpoint has a separate aggregation path and can include
           // rows outside a member's visible SKU scope.
           const completedSales = rows.reduce((sum, row) => sum + Number(row.completedSales ?? 0), 0);
-          target = rows.length ? '$' + amountTarget.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '暂无目标';
-          completed = '$' + completedSales.toLocaleString(undefined, { maximumFractionDigits: 2 });
+          target = rows.length ? usd(amountTarget) : '暂无目标';
+          targetNum = rows.length && amountTarget > 0 ? amountTarget : null;
+          completedNum = completedSales;
+          completed = usd(completedSales);
         } else target = '暂无数据';
       } catch { target = '暂无数据'; }
       if (dashboardIsMounted()) renderMetricCards();
@@ -167,7 +187,7 @@ export async function renderDashboardPage(main: HTMLElement): Promise<void> {
   // Measure again after attachment through ResizeObserver; transient shell widths
   // must not become the permanent chart dimensions.
   let chartWidth = Math.max(220, Math.round(trendHost.getBoundingClientRect().width) || TREND_CHART.width);
-  trendHost.innerHTML = trend.length ? `<div class="dashboard-trend-controls"><div class="dashboard-trend-legend" role="group" aria-label="切换图表指标"><button type="button" class="${dashboardTrendOptions.showRevenue ? 'is-active' : ''}" data-trend-series="revenue" aria-pressed="${dashboardTrendOptions.showRevenue}"><i class="is-revenue"></i>销售额 <small>USD</small></button><button type="button" class="${dashboardTrendOptions.showUnits ? 'is-active' : ''}" data-trend-series="units" aria-pressed="${dashboardTrendOptions.showUnits}"><i class="is-units"></i>销量 <small>件</small></button>${trend.some(row=>row.profit!=null)?'<span style="color:#087f73">● 粗算利润 USD</span>':''}</div><span class="dashboard-trend-source">${trend.length} 天 · 按美国太平洋时间</span></div>${dashboardTrendSvg(trend, dashboardTrendOptions, chartWidth)}<div class="dashboard-trend-readout" aria-live="polite"><div><span data-trend-label>数据详情</span><strong data-trend-detail>聚焦或悬停任一日期查看详情</strong></div><button type="button" class="secondary" data-trend-filter disabled>按日期筛选</button></div>` : '<div class="dashboard-empty">当前筛选条件下暂无日事实</div>';
+  trendHost.innerHTML = trend.length ? `<div class="dashboard-trend-controls"><div class="dashboard-trend-legend" role="group" aria-label="切换图表指标"><button type="button" class="${dashboardTrendOptions.showRevenue ? 'is-active' : ''}" data-trend-series="revenue" aria-pressed="${dashboardTrendOptions.showRevenue}"><i class="is-revenue"></i>销售额 <small>USD</small></button><button type="button" class="${dashboardTrendOptions.showUnits ? 'is-active' : ''}" data-trend-series="units" aria-pressed="${dashboardTrendOptions.showUnits}"><i class="is-units"></i>销量 <small>件</small></button>${trend.some(row=>row.profit!=null)?'<span class="dashboard-trend-note"><i></i>粗算利润 <small>USD</small></span>':''}</div><span class="dashboard-trend-source">${trend.length} 天 · 按美国太平洋时间</span></div>${dashboardTrendSvg(trend, dashboardTrendOptions, chartWidth)}<div class="dashboard-trend-readout" aria-live="polite"><div><span data-trend-label>数据详情</span><strong data-trend-detail>聚焦或悬停任一日期查看详情</strong></div><button type="button" class="secondary" data-trend-filter disabled>按日期筛选</button></div>` : '<div class="dashboard-empty">当前筛选条件下暂无日事实</div>';
   let focusedTrend: DashboardTrendRow | undefined;
   let pointNodes = [...trendHost.querySelectorAll<SVGRectElement>('[data-trend-index]')];
   const detail = trendHost.querySelector<HTMLElement>('[data-trend-detail]');

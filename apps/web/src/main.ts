@@ -1,5 +1,6 @@
 import './styles.css';
 import './pages/WeatherPage.css';
+import './theme.css';
 import { renderDashboard, visibleNavigation } from './dashboard.js';
 import { resolveApiRequestUrl } from './apiBasePath.js';
 const root = document.querySelector<HTMLDivElement>('#root')!;

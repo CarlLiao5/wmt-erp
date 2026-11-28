@@ -62,12 +62,14 @@ describe('WFS SKU visibility', () => {
   it('keeps matching head-freight rows only for visible SKUs', () => {
     const result = filterVisibleWfsRows([{
       storeId: 'store-a', shipmentId: 'ship-1', items: [{ sku: 'SKU-1' }, { sku: 'SKU-2' }],
+      tracking: { inboundNumber: 'IN-1', brand: 'forwarder', currentStatusText: '运输中', events: [{ info: '已出库' }] },
       headFreightItems: [
         { sku: 'SKU-1', quantity: 4, inboundNumber: 'IN-1' },
         { sku: 'SKU-2', quantity: 8, inboundNumber: 'IN-1' },
       ],
     }], { role: 'member', storeIds: new Set(), skus: new Set(['store-a:SKU-1']) }, 'shipments');
     expect(result[0]?.headFreightItems).toEqual([{ sku: 'SKU-1', quantity: 4, inboundNumber: 'IN-1' }]);
+    expect(result[0]?.tracking).toMatchObject({ inboundNumber: 'IN-1', events: [{ info: '已出库' }] });
   });
 
   it('attaches WFS head-freight records to the corresponding store and shipment', async () => {
